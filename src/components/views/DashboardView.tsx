@@ -189,8 +189,8 @@ export default function DashboardView() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? "#23262f" : "#f3f4f6"} />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: darkMode ? "#9ca3af" : "#6b7280" }} stroke={darkMode ? "#23262f" : "#d1d5db"} />
-                <YAxis tick={{ fontSize: 12, fill: darkMode ? "#9ca3af" : "#6b7280" }} stroke={darkMode ? "#23262f" : "#d1d5db"} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: darkMode ? "#9ca3af" : "#6b7280" }} stroke={darkMode ? "#23262f" : "#d1d5db"} />
+                <YAxis tick={{ fontSize: 11, fill: darkMode ? "#9ca3af" : "#6b7280" }} stroke={darkMode ? "#23262f" : "#d1d5db"} width={45} hide={false} />
                 <Tooltip
                   contentStyle={{
                     borderRadius: "12px",
@@ -292,10 +292,10 @@ export default function DashboardView() {
           </h3>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-              <BarChart data={barData} barSize={40}>
+              <BarChart data={barData} barSize={30}>
                 <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? "#23262f" : "#f3f4f6"} />
-                <XAxis dataKey="name" tick={{ fontSize: 12, fill: darkMode ? "#9ca3af" : "#6b7280" }} stroke={darkMode ? "#23262f" : "#d1d5db"} />
-                <YAxis tick={{ fontSize: 12, fill: darkMode ? "#9ca3af" : "#6b7280" }} stroke={darkMode ? "#23262f" : "#d1d5db"} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: darkMode ? "#9ca3af" : "#6b7280" }} stroke={darkMode ? "#23262f" : "#d1d5db"} />
+                <YAxis tick={{ fontSize: 11, fill: darkMode ? "#9ca3af" : "#6b7280" }} stroke={darkMode ? "#23262f" : "#d1d5db"} width={45} />
                 <Tooltip
                   contentStyle={{
                     borderRadius: "12px",

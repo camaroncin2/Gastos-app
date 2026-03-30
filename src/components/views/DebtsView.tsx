@@ -115,10 +115,10 @@ export default function DebtsView() {
                       <p className="text-xs text-gray-400 mt-0.5">Día de pago: {debt.paymentDay} · Inicio: {debt.startDate}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 mb-4">
-                    <div><p className="text-xs text-gray-400">Total</p><p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{formatCurrency(debt.totalAmount, debt.currency)}</p></div>
-                    <div><p className="text-xs text-gray-400">Cuota</p><p className="text-sm font-semibold text-orange-500">{formatCurrency(debt.monthlyPayment, debt.currency)}</p></div>
-                    <div><p className="text-xs text-gray-400">Restante</p><p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{formatCurrency(remaining, debt.currency)}</p></div>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
+                    <div className="min-w-0"><p className="text-xs text-gray-400">Total</p><p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 truncate">{formatCurrency(debt.totalAmount, debt.currency)}</p></div>
+                    <div className="min-w-0"><p className="text-xs text-gray-400">Cuota</p><p className="text-xs sm:text-sm font-semibold text-orange-500 truncate">{formatCurrency(debt.monthlyPayment, debt.currency)}</p></div>
+                    <div className="min-w-0"><p className="text-xs text-gray-400">Restante</p><p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 truncate">{formatCurrency(remaining, debt.currency)}</p></div>
                   </div>
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center justify-between text-xs">
@@ -186,7 +186,7 @@ export default function DebtsView() {
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent" />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Meses pagados</label>
               <input type="number" min="0" value={form.paidMonths} onChange={(e) => setForm({ ...form, paidMonths: e.target.value })}

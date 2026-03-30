@@ -38,13 +38,13 @@ export default function StatCard({
     >
       <div className="absolute top-0 right-0 w-16 h-16 md:w-24 md:h-24 translate-x-6 md:translate-x-8 -translate-y-6 md:-translate-y-8 rounded-full bg-orange-50 dark:bg-orange-500/5 opacity-50" />
       
-      <div className="flex items-start justify-between relative">
-        <div className="space-y-3">
+      <div className="flex items-start justify-between relative min-w-0">
+        <div className="space-y-3 min-w-0 flex-1">
           <span className="text-[10px] md:text-sm font-medium text-gray-400 uppercase tracking-wide">
             {title}
           </span>
           <div>
-            <p className="text-lg md:text-2xl font-bold text-gray-800 dark:text-gray-100">{value}</p>
+            <p className="text-base md:text-2xl font-bold text-gray-800 dark:text-gray-100 truncate">{value}</p>
             {subtitle && (
               <p className="text-xs text-gray-400 mt-1">{subtitle}</p>
             )}

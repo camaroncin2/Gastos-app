@@ -74,7 +74,7 @@ export default function AppShell() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50/50 dark:bg-dark-bg transition-colors">
+    <div className="flex min-h-screen bg-gray-50/50 dark:bg-dark-bg transition-colors overflow-x-hidden">
       {/* Mobile backdrop */}
       {isMobile && mobileMenuOpen && (
         <div
@@ -93,7 +93,7 @@ export default function AppShell() {
       />
 
       <div
-        className="flex-1 transition-[margin] duration-300 ease-in-out"
+        className="flex-1 min-w-0 transition-[margin] duration-300 ease-in-out"
         style={{ marginLeft: isMobile ? 0 : (sidebarCollapsed ? 72 : 260) }}
       >
         <TopBar
@@ -102,7 +102,7 @@ export default function AppShell() {
           isMobile={isMobile}
         />
 
-        <main className="p-4 md:p-6 lg:p-8">
+        <main className="p-3 md:p-6 lg:p-8 overflow-x-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeView}
