@@ -1,0 +1,127 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { useStore } from "@/store/useStore";
+import { getMonthName } from "@/lib/utils";
+import { ChevronLeft, ChevronRight, Bell, Sun, Moon, Menu } from "lucide-react";
+import { motion } from "framer-motion";
+import NotificationsPanel, { useNotifications } from "@/components/ui/NotificationsPanel";
+
+const VIEW_TITLES: Record<string, string> = {
+  dashboard: "Dashboard",
+  incomes: "Gestión de Ingresos",
+  expenses: "Gestión de Gastos",
+  debts: "Control de Deudas",
+  savings: "Módulo de Ahorros",
+  vault: "Bóveda Segura",
+  settings: "Configuración",
+};
+
+interface TopBarProps {
+  activeView: string;
+  onMenuToggle: () => void;
+  isMobile: boolean;
+}
+
+export default function TopBar({ activeView, onMenuToggle, isMobile }: TopBarProps) {
+  const { currentMonth, setCurrentMonth, darkMode, toggleDarkMode, dismissedNotifications, userName } = useStore();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const allNotifications = useNotifications();
+  const visibleCount = allNotifications.filter((n) => !dismissedNotifications.includes(n.id)).length;
+
+  const navigateMonth = (direction: number) => {
+    const [year, month] = currentMonth.split("-").map(Number);
+    const date = new Date(year, month - 1 + direction);
+    const newMonth = `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}`;
+    setCurrentMonth(newMonth);
+  };
+
+  return (
+    <header className="h-16 bg-white dark:bg-dark-card border-b border-gray-100 dark:border-dark-border flex items-center justify-between px-4 md:px-8 transition-colors">
+      <div className="flex items-center gap-3">
+        {/* Hamburger menu - mobile only */}
+        {isMobile && (
+          <button
+            onClick={onMenuToggle}
+            className="p-2 -ml-1 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-surface transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <h1 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100">
+          {VIEW_TITLES[activeView] || "Dashboard"}
+        </h1>
+      </div>
+
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* Month selector */}
+        <div className="flex items-center gap-1 md:gap-2 bg-gray-50 dark:bg-dark-surface rounded-xl px-2 md:px-3 py-1.5">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => navigateMonth(-1)}
+            className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-border text-gray-500 dark:text-gray-400"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </motion.button>
+          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 min-w-[80px] md:min-w-[140px] text-center capitalize truncate">
+            {getMonthName(currentMonth)}
+          </span>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => navigateMonth(1)}
+            className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-border text-gray-500 dark:text-gray-400"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </motion.button>
+        </div>
+
+        {/* Dark mode toggle */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={toggleDarkMode}
+          className="relative p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-surface text-gray-400 dark:text-gray-300 transition-colors"
+          title={darkMode ? "Modo claro" : "Modo noche"}
+        >
+          <motion.div
+            key={darkMode ? "moon" : "sun"}
+            initial={{ rotate: -90, opacity: 0 }}
+            animate={{ rotate: 0, opacity: 1 }}
+            exit={{ rotate: 90, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </motion.div>
+        </motion.button>
+
+        {/* Notifications */}
+        <div className="relative" ref={notifRef}>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setNotifOpen(!notifOpen)}
+            className="relative p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-surface text-gray-400 transition-colors"
+          >
+            <Bell className="w-5 h-5" />
+            {visibleCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center px-1 text-[9px] font-bold bg-orange-400 text-white rounded-full">
+                {visibleCount}
+              </span>
+            )}
+          </motion.button>
+          <NotificationsPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+        </div>
+
+        {/* Avatar */}
+        <div className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center">
+          <span className="text-sm font-bold text-orange-500">{userName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "U"}</span>
+        </div>
+      </div>
+    </header>
+  );
+}
