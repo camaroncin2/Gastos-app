@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
 import { getMonthName } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Bell, Sun, Moon, Menu } from "lucide-react";
+import { ChevronLeft, ChevronRight, Bell, Sun, Moon, Menu, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import NotificationsPanel, { useNotifications } from "@/components/ui/NotificationsPanel";
 
@@ -37,6 +38,7 @@ interface TopBarProps {
 }
 
 export default function TopBar({ activeView, onMenuToggle, isMobile }: TopBarProps) {
+  const router = useRouter();
   const { currentMonth, setCurrentMonth, darkMode, toggleDarkMode, dismissedNotifications, userName } = useStore(useShallow((s) => ({
     currentMonth: s.currentMonth,
     setCurrentMonth: s.setCurrentMonth,
@@ -47,6 +49,12 @@ export default function TopBar({ activeView, onMenuToggle, isMobile }: TopBarPro
   })));
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  };
   const allNotifications = useNotifications();
   const visibleCount = allNotifications.filter((n) => !dismissedNotifications.includes(n.id)).length;
 
@@ -116,10 +124,21 @@ export default function TopBar({ activeView, onMenuToggle, isMobile }: TopBarPro
             <NotificationsPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
           </div>
 
-          {/* Avatar - hidden on mobile */}
+          {/* Avatar + logout */}
           {!isMobile && (
-            <div className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center">
-              <span className="text-sm font-bold text-orange-500">{userName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "U"}</span>
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center">
+                <span className="text-sm font-bold text-orange-500">{userName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "U"}</span>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleLogout}
+                className="p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-surface text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-5 h-5" />
+              </motion.button>
             </div>
           )}
         </div>
