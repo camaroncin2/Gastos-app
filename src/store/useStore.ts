@@ -330,6 +330,22 @@ export const useStore = create<AppState>()(
           ),
         })),
 
+      // Subscription actions
+      addSubscription: (subscription) =>
+        set((state) => ({
+          subscriptions: [...state.subscriptions, { ...subscription, id: uuidv4() }],
+        })),
+      updateSubscription: (id, subscription) =>
+        set((state) => ({
+          subscriptions: state.subscriptions.map((s) =>
+            s.id === id ? { ...s, ...subscription } : s
+          ),
+        })),
+      deleteSubscription: (id) =>
+        set((state) => ({
+          subscriptions: state.subscriptions.filter((s) => s.id !== id),
+        })),
+
       // Vault actions
       addVaultEntry: (entry) =>
         set((state) => ({
