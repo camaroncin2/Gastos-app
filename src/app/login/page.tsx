@@ -395,12 +395,12 @@ export default function LandingPage() {
       {/* ── Navbar ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-dark-bg/80 backdrop-blur-md border-b border-gray-100 dark:border-dark-border">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+          <a href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 rounded-xl bg-orange-500 flex items-center justify-center">
               <Wallet className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-gray-900 dark:text-white text-lg">MisGastos</span>
-          </div>
+          </a>
           <div className="flex items-center gap-3">
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={toggleDarkMode}
               className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors">
