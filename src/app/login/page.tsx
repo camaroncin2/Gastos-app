@@ -8,7 +8,8 @@ import { useStore } from "@/store/useStore";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { darkMode, toggleDarkMode } = useStore((s) => ({ darkMode: s.darkMode, toggleDarkMode: s.toggleDarkMode }));
+  const darkMode = useStore((s) => s.darkMode);
+  const toggleDarkMode = useStore((s) => s.toggleDarkMode);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
