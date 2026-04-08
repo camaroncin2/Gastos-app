@@ -223,13 +223,17 @@ export default function NotificationsPanel({ open, onClose }: NotificationsPanel
           {/* Backdrop */}
           <div className="fixed inset-0 z-40" onClick={onClose} />
 
-          {/* Panel */}
+          {/* Panel — fixed on mobile, absolute on md+ */}
           <motion.div
             initial={{ opacity: 0, y: -8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.96 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-80 md:w-96 max-w-[24rem] bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-xl z-50 overflow-hidden"
+            className="
+              fixed top-[57px] left-2 right-2 z-50
+              md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-96
+              bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-xl overflow-hidden
+            "
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-dark-border">
@@ -252,7 +256,7 @@ export default function NotificationsPanel({ open, onClose }: NotificationsPanel
             </div>
 
             {/* Body */}
-            <div className="max-h-80 overflow-y-auto">
+            <div className="max-h-[60vh] md:max-h-80 overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="py-10 text-center">
                   <CheckCircle2 className="w-8 h-8 text-green-400 mx-auto mb-2" />
@@ -288,7 +292,7 @@ export default function NotificationsPanel({ open, onClose }: NotificationsPanel
                           </div>
                           <button
                             onClick={() => dismissNotification(n.id)}
-                            className="p-0.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-gray-200/50 dark:hover:bg-dark-surface text-gray-400 transition-opacity shrink-0"
+                            className="p-0.5 rounded-md opacity-60 md:opacity-0 md:group-hover:opacity-100 hover:bg-gray-200/50 dark:hover:bg-dark-surface text-gray-400 transition-opacity shrink-0"
                             title="Descartar"
                           >
                             <X className="w-3.5 h-3.5" />
