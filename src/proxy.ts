@@ -9,7 +9,7 @@ function getSecret() {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isLoginPage = pathname === "/login";
+  const isPublicPage = pathname === "/login" || pathname === "/auth";
   const isApiAuth = pathname.startsWith("/api/auth");
 
   // Always allow auth API routes
@@ -19,17 +19,17 @@ export async function proxy(request: NextRequest) {
   const secret = getSecret();
 
   if (!token || !secret) {
-    if (isLoginPage) return NextResponse.next();
-    return NextResponse.redirect(new URL("/login", request.url));
+    if (isPublicPage) return NextResponse.next();
+    return NextResponse.redirect(new URL("/auth", request.url));
   }
 
   try {
     await jwtVerify(token, secret);
-    if (isLoginPage) return NextResponse.redirect(new URL("/", request.url));
+    if (isPublicPage) return NextResponse.redirect(new URL("/", request.url));
     return NextResponse.next();
   } catch {
-    if (isLoginPage) return NextResponse.next();
-    const response = NextResponse.redirect(new URL("/login", request.url));
+    if (isPublicPage) return NextResponse.next();
+    const response = NextResponse.redirect(new URL("/auth", request.url));
     response.cookies.delete("auth-token");
     return response;
   }
