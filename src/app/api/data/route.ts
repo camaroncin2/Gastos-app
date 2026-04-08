@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { neon } from "@neondatabase/serverless";
 
-const DATA_FILE = path.join(process.cwd(), "data.json");
+function getDb() {
+  return neon(process.env.DATABASE_URL!);
+}
 
 export async function GET() {
   try {
-    if (fs.existsSync(DATA_FILE)) {
-      const raw = fs.readFileSync(DATA_FILE, "utf-8");
-      return new NextResponse(raw, {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-    return NextResponse.json(null);
+    const sql = getDb();
+    const rows = await sql`SELECT data FROM app_data WHERE id = 1`;
+    if (rows.length === 0) return NextResponse.json(null);
+    return new NextResponse(rows[0].data as string, {
+      headers: { "Content-Type": "application/json" },
+    });
   } catch {
     return NextResponse.json(null);
   }
@@ -21,7 +21,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.text();
-    fs.writeFileSync(DATA_FILE, body, "utf-8");
+    const sql = getDb();
+    await sql`
+      INSERT INTO app_data (id, data) VALUES (1, ${body})
+      ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data
+    `;
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ ok: false }, { status: 500 });
