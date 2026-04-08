@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, Wallet, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Wallet, Loader2, Sun, Moon } from "lucide-react";
+import { useStore } from "@/store/useStore";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { darkMode, toggleDarkMode } = useStore((s) => ({ darkMode: s.darkMode, toggleDarkMode: s.toggleDarkMode }));
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -41,6 +43,16 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg px-4">
+      {/* Dark mode toggle */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={toggleDarkMode}
+        className="fixed top-4 right-4 p-2 rounded-xl bg-white dark:bg-dark-card border border-gray-100 dark:border-dark-border text-gray-400 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-surface transition-colors shadow-sm"
+        title={darkMode ? "Modo claro" : "Modo noche"}
+      >
+        {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+      </motion.button>
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
