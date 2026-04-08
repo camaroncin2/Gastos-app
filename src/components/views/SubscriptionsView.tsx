@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
-import { formatCurrency, formatCRC, getTodayStr } from "@/lib/utils";
+import { formatCurrency, getTodayStr } from "@/lib/utils";
 import {
   Currency,
   Subscription,
@@ -70,13 +70,14 @@ const defaultForm = {
 };
 
 export default function SubscriptionsView() {
-  const { subscriptions, addSubscription, updateSubscription, deleteSubscription, convertToCRC } = useStore(
+  const { subscriptions, addSubscription, updateSubscription, deleteSubscription, convertToCRC, formatAmount } = useStore(
     useShallow((s) => ({
       subscriptions: s.subscriptions,
       addSubscription: s.addSubscription,
       updateSubscription: s.updateSubscription,
       deleteSubscription: s.deleteSubscription,
       convertToCRC: s.convertToCRC,
+      formatAmount: s.formatAmount,
     }))
   );
 
@@ -160,8 +161,8 @@ export default function SubscriptionsView() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
         <StatCard title="Activas" value={String(active.length)} icon={<Repeat className="w-5 h-5" />} accentColor="blue" />
-        <StatCard title="Total Mes" value={formatCRC(totalMonthly)} icon={<Repeat className="w-5 h-5" />} />
-        <StatCard title="Total Año" value={formatCRC(totalYearly)} icon={<Repeat className="w-5 h-5" />} />
+        <StatCard title="Total Mes" value={formatAmount(totalMonthly)} icon={<Repeat className="w-5 h-5" />} />
+        <StatCard title="Total Año" value={formatAmount(totalYearly)} icon={<Repeat className="w-5 h-5" />} />
         <StatCard title="Pausadas" value={String(subscriptions.filter(s => s.status === "paused").length)} icon={<PauseCircle className="w-5 h-5" />} />
       </div>
 
@@ -241,7 +242,7 @@ export default function SubscriptionsView() {
                       <span className="ml-1 text-xs text-gray-400">/ {BILLING_CYCLE_LABELS[sub.billingCycle].toLowerCase()}</span>
                     </div>
                     {sub.currency !== "CRC" && (
-                      <span className="text-xs text-gray-400">{formatCRC(monthlyInCRC)}/mes</span>
+                      <span className="text-xs text-gray-400">{formatAmount(monthlyInCRC)}/mes</span>
                     )}
                   </div>
 

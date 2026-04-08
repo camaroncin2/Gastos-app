@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
-import { formatCurrency, formatCRC, getTodayStr } from "@/lib/utils";
+import { formatCurrency, getTodayStr } from "@/lib/utils";
 import { Currency } from "@/types";
 import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
@@ -40,6 +40,7 @@ export default function IncomesView() {
     deleteIncome,
     convertToCRC,
     getTotalIncomes,
+    formatAmount,
   } = useStore(useShallow((s) => ({
     incomes: s.incomes,
     currentMonth: s.currentMonth,
@@ -48,6 +49,7 @@ export default function IncomesView() {
     deleteIncome: s.deleteIncome,
     convertToCRC: s.convertToCRC,
     getTotalIncomes: s.getTotalIncomes,
+    formatAmount: s.formatAmount,
   })));
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -118,10 +120,10 @@ export default function IncomesView() {
     <div className="space-y-4 md:space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-6">
-        <StatCard title="Total Ingresos" value={formatCRC(totalCRC)} icon={<Wallet className="w-5 h-5" />} accentColor="green" />
-        <StatCard title="Quincena 1 / Salario" value={formatCRC(q1)} icon={<ArrowDownRight className="w-5 h-5" />} />
-        <StatCard title="Quincena 2" value={formatCRC(q2)} icon={<ArrowUpRight className="w-5 h-5" />} />
-        <StatCard title="Extras" value={formatCRC(extras)} icon={<DollarSign className="w-5 h-5" />} accentColor="orange" />
+        <StatCard title="Total Ingresos" value={formatAmount(totalCRC)} icon={<Wallet className="w-5 h-5" />} accentColor="green" />
+        <StatCard title="Quincena 1 / Salario" value={formatAmount(q1)} icon={<ArrowDownRight className="w-5 h-5" />} />
+        <StatCard title="Quincena 2" value={formatAmount(q2)} icon={<ArrowUpRight className="w-5 h-5" />} />
+        <StatCard title="Extras" value={formatAmount(extras)} icon={<DollarSign className="w-5 h-5" />} accentColor="orange" />
       </div>
 
       {/* Filters & sort */}
@@ -176,7 +178,7 @@ export default function IncomesView() {
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{formatCurrency(income.amount, income.currency)}</p>
-                    {income.currency !== "CRC" && <p className="text-xs text-gray-400">≈ {formatCRC(convertToCRC(income.amount, income.currency))}</p>}
+                    {income.currency !== "CRC" && <p className="text-xs text-gray-400">≈ {formatAmount(convertToCRC(income.amount, income.currency))}</p>}
                   </div>
                   <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEdit(income)}
                     className="p-2 rounded-lg text-gray-300 hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 sm:opacity-0 sm:group-hover:opacity-100 transition-all">

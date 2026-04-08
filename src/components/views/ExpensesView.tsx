@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
-import { formatCurrency, formatCRC, getTodayStr } from "@/lib/utils";
+import { formatCurrency, getTodayStr } from "@/lib/utils";
 import { Currency, ExpenseCategory, EXPENSE_CATEGORY_LABELS } from "@/types";
 import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
@@ -19,7 +19,7 @@ const CATEGORY_ICONS: Record<ExpenseCategory, typeof Home> = {
 };
 
 export default function ExpensesView() {
-  const { expenses, currentMonth, addExpense, updateExpense, deleteExpense, convertToCRC, getTotalExpenses, getExpensesByCategory } = useStore(useShallow((s) => ({
+  const { expenses, currentMonth, addExpense, updateExpense, deleteExpense, convertToCRC, getTotalExpenses, getExpensesByCategory, formatAmount } = useStore(useShallow((s) => ({
     expenses: s.expenses,
     currentMonth: s.currentMonth,
     addExpense: s.addExpense,
@@ -28,6 +28,7 @@ export default function ExpensesView() {
     convertToCRC: s.convertToCRC,
     getTotalExpenses: s.getTotalExpenses,
     getExpensesByCategory: s.getExpensesByCategory,
+    formatAmount: s.formatAmount,
   })));
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -68,10 +69,10 @@ export default function ExpensesView() {
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-6">
-        <StatCard title="Total Gastos" value={formatCRC(totalCRC)} icon={<Receipt className="w-5 h-5" />} accentColor="red" />
-        <StatCard title="Gastos de Casa" value={formatCRC(byCategory.casa)} icon={<Home className="w-5 h-5" />} />
-        <StatCard title="Tarjeta" value={formatCRC(byCategory.tarjeta)} icon={<CreditCard className="w-5 h-5" />} />
-        <StatCard title="Personales" value={formatCRC(byCategory.personal)} icon={<User className="w-5 h-5" />} />
+        <StatCard title="Total Gastos" value={formatAmount(totalCRC)} icon={<Receipt className="w-5 h-5" />} accentColor="red" />
+        <StatCard title="Gastos de Casa" value={formatAmount(byCategory.casa)} icon={<Home className="w-5 h-5" />} />
+        <StatCard title="Tarjeta" value={formatAmount(byCategory.tarjeta)} icon={<CreditCard className="w-5 h-5" />} />
+        <StatCard title="Personales" value={formatAmount(byCategory.personal)} icon={<User className="w-5 h-5" />} />
       </div>
 
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -121,7 +122,7 @@ export default function ExpensesView() {
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{formatCurrency(expense.amount, expense.currency)}</p>
-                      {expense.currency !== "CRC" && <p className="text-xs text-gray-400">≈ {formatCRC(convertToCRC(expense.amount, expense.currency))}</p>}
+                      {expense.currency !== "CRC" && <p className="text-xs text-gray-400">≈ {formatAmount(convertToCRC(expense.amount, expense.currency))}</p>}
                     </div>
                     <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEdit(expense)}
                       className="p-2 rounded-lg text-gray-300 hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 sm:opacity-0 sm:group-hover:opacity-100 transition-all">

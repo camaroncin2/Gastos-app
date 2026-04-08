@@ -2,7 +2,6 @@
 
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
-import { formatCRC } from "@/lib/utils";
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -60,6 +59,7 @@ export function useNotifications(): Notification[] {
     getTotalExpenses,
     getTotalDebtPayments,
     getTotalSavingsContributions,
+    formatAmount,
   } = useStore(useShallow((s) => ({
     incomes: s.incomes,
     expenses: s.expenses,
@@ -71,6 +71,7 @@ export function useNotifications(): Notification[] {
     getTotalExpenses: s.getTotalExpenses,
     getTotalDebtPayments: s.getTotalDebtPayments,
     getTotalSavingsContributions: s.getTotalSavingsContributions,
+    formatAmount: s.formatAmount,
   })));
 
   return useMemo(() => {
@@ -90,7 +91,7 @@ export function useNotifications(): Notification[] {
         type: "danger",
         icon: <TrendingDown className="w-4 h-4" />,
         title: "Balance negativo",
-        description: `Tus gastos superan tus ingresos por ${formatCRC(Math.abs(balance))} este mes.`,
+        description: `Tus gastos superan tus ingresos por ${formatAmount(Math.abs(balance))} este mes.`,
       });
     }
 
@@ -119,8 +120,8 @@ export function useNotifications(): Notification[] {
           title: `Pago próximo: ${debt.description}`,
           description:
             daysUntilPayment === 0
-              ? `¡Hoy vence! Monto: ${formatCRC(amountCRC)}`
-              : `Vence en ${daysUntilPayment} día${daysUntilPayment > 1 ? "s" : ""}. Monto: ${formatCRC(amountCRC)}`,
+              ? `¡Hoy vence! Monto: ${formatAmount(amountCRC)}`
+              : `Vence en ${daysUntilPayment} día${daysUntilPayment > 1 ? "s" : ""}. Monto: ${formatAmount(amountCRC)}`,
         });
       }
     });
@@ -162,7 +163,7 @@ export function useNotifications(): Notification[] {
             type: "success",
             icon: <PiggyBank className="w-4 h-4" />,
             title: `Meta casi alcanzada: ${saving.description}`,
-            description: `¡Llevas el ${Math.round(pct)}%! Solo te faltan ${formatCRC(convertToCRC(saving.targetAmount - saving.currentAmount, saving.currency))}.`,
+            description: `¡Llevas el ${Math.round(pct)}%! Solo te faltan ${formatAmount(convertToCRC(saving.targetAmount - saving.currentAmount, saving.currency))}.`,
           });
         }
         if (pct >= 100) {
@@ -171,7 +172,7 @@ export function useNotifications(): Notification[] {
             type: "success",
             icon: <Sparkles className="w-4 h-4" />,
             title: `¡Meta completada! ${saving.description}`,
-            description: `Alcanzaste tu objetivo de ${formatCRC(convertToCRC(saving.targetAmount, saving.currency))}.`,
+            description: `Alcanzaste tu objetivo de ${formatAmount(convertToCRC(saving.targetAmount, saving.currency))}.`,
           });
         }
       }

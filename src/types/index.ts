@@ -1,5 +1,45 @@
 export type Currency = "CRC" | "USD" | "EUR";
 
+// ── Display currency (what the user sees throughout the app) ──────
+
+export type DisplayCurrencyCode =
+  | "CRC" | "USD" | "EUR" | "COP" | "ARS" | "MXN" | "PEN" | "CLP" | "BRL"
+  | "BOB" | "UYU" | "PYG" | "VES" | "DOP" | "GTQ" | "HNL" | "NIO" | "PAB"
+  | "GBP" | "CAD" | "JPY" | "CNY";
+
+export interface DisplayCurrency {
+  code: DisplayCurrencyCode;
+  symbol: string;
+  name: string;
+  flag: string;
+  decimals: number;
+}
+
+export const DISPLAY_CURRENCIES: DisplayCurrency[] = [
+  { code: "CRC", symbol: "₡",    name: "Colón Costarricense",   flag: "🇨🇷", decimals: 0 },
+  { code: "USD", symbol: "$",    name: "Dólar Estadounidense",  flag: "🇺🇸", decimals: 2 },
+  { code: "EUR", symbol: "€",    name: "Euro",                  flag: "🇪🇺", decimals: 2 },
+  { code: "COP", symbol: "$",    name: "Peso Colombiano",       flag: "🇨🇴", decimals: 0 },
+  { code: "ARS", symbol: "$",    name: "Peso Argentino",        flag: "🇦🇷", decimals: 0 },
+  { code: "MXN", symbol: "$",    name: "Peso Mexicano",         flag: "🇲🇽", decimals: 2 },
+  { code: "PEN", symbol: "S/",   name: "Sol Peruano",           flag: "🇵🇪", decimals: 2 },
+  { code: "CLP", symbol: "$",    name: "Peso Chileno",          flag: "🇨🇱", decimals: 0 },
+  { code: "BRL", symbol: "R$",   name: "Real Brasileño",        flag: "🇧🇷", decimals: 2 },
+  { code: "BOB", symbol: "Bs.",  name: "Boliviano",             flag: "🇧🇴", decimals: 2 },
+  { code: "UYU", symbol: "$U",   name: "Peso Uruguayo",         flag: "🇺🇾", decimals: 2 },
+  { code: "PYG", symbol: "₲",    name: "Guaraní Paraguayo",     flag: "🇵🇾", decimals: 0 },
+  { code: "VES", symbol: "Bs.S", name: "Bolívar Venezolano",    flag: "🇻🇪", decimals: 2 },
+  { code: "DOP", symbol: "RD$",  name: "Peso Dominicano",       flag: "🇩🇴", decimals: 2 },
+  { code: "GTQ", symbol: "Q",    name: "Quetzal Guatemalteco",  flag: "🇬🇹", decimals: 2 },
+  { code: "HNL", symbol: "L",    name: "Lempira Hondureño",     flag: "🇭🇳", decimals: 2 },
+  { code: "NIO", symbol: "C$",   name: "Córdoba Nicaragüense",  flag: "🇳🇮", decimals: 2 },
+  { code: "PAB", symbol: "B/.",  name: "Balboa Panameño",       flag: "🇵🇦", decimals: 2 },
+  { code: "GBP", symbol: "£",    name: "Libra Esterlina",       flag: "🇬🇧", decimals: 2 },
+  { code: "CAD", symbol: "C$",   name: "Dólar Canadiense",      flag: "🇨🇦", decimals: 2 },
+  { code: "JPY", symbol: "¥",    name: "Yen Japonés",           flag: "🇯🇵", decimals: 0 },
+  { code: "CNY", symbol: "¥",    name: "Yuan Chino",            flag: "🇨🇳", decimals: 2 },
+];
+
 export const CURRENCY_SYMBOLS: Record<Currency, string> = {
   CRC: "₡",
   USD: "$",

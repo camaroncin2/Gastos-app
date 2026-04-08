@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
-import { formatCRC } from "@/lib/utils";
 import { EXPENSE_CATEGORY_LABELS, type ExpenseCategory } from "@/types";
 import StatCard from "@/components/ui/StatCard";
 import {
@@ -57,6 +56,7 @@ export default function DashboardView() {
     loans,
     currentMonth,
     convertToCRC,
+    formatAmount,
     darkMode,
   } = useStore(useShallow((s) => ({
     getTotalIncomes: s.getTotalIncomes,
@@ -72,6 +72,7 @@ export default function DashboardView() {
     loans: s.loans,
     currentMonth: s.currentMonth,
     convertToCRC: s.convertToCRC,
+    formatAmount: s.formatAmount,
     darkMode: s.darkMode,
   })));
 
@@ -154,7 +155,7 @@ export default function DashboardView() {
       <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-5 gap-3 md:gap-6">
         <StatCard
           title="Ingresos Totales"
-          value={formatCRC(totalIncomes)}
+          value={formatAmount(totalIncomes)}
           icon={<Wallet className="w-5 h-5" />}
           accentColor="green"
           trend="up"
@@ -162,7 +163,7 @@ export default function DashboardView() {
         />
         <StatCard
           title="Gastos Totales"
-          value={formatCRC(totalExpenses)}
+          value={formatAmount(totalExpenses)}
           icon={<Receipt className="w-5 h-5" />}
           accentColor="red"
           trend="down"
@@ -170,20 +171,20 @@ export default function DashboardView() {
         />
         <StatCard
           title="Cuotas Mensuales"
-          value={formatCRC(totalDebts)}
+          value={formatAmount(totalDebts)}
           icon={<CreditCard className="w-5 h-5" />}
           subtitle={`${debts.filter((d) => d.paidMonths < d.totalMonths).length} deudas activas`}
         />
         <StatCard
           title="Dinero Prestado"
-          value={formatCRC(totalLoanPending)}
+          value={formatAmount(totalLoanPending)}
           icon={<HandCoins className="w-5 h-5" />}
           accentColor="purple"
           subtitle={`${activeLoansCount} préstamo${activeLoansCount !== 1 ? "s" : ""} activo${activeLoansCount !== 1 ? "s" : ""}`}
         />
         <StatCard
           title="Salario Restante"
-          value={formatCRC(remaining)}
+          value={formatAmount(remaining)}
           icon={
             remaining >= 0 ? (
               <TrendingUp className="w-5 h-5" />
@@ -230,7 +231,7 @@ export default function DashboardView() {
                     backgroundColor: darkMode ? "#181a20" : "#fff",
                     color: darkMode ? "#e5e7eb" : "#374151",
                   }}
-                  formatter={(val) => formatCRC(Number(val))}
+                  formatter={(val) => formatAmount(Number(val))}
                 />
                 <Area
                   type="monotone"
@@ -283,7 +284,7 @@ export default function DashboardView() {
                       backgroundColor: darkMode ? "#181a20" : "#fff",
                       color: darkMode ? "#e5e7eb" : "#374151",
                     }}
-                    formatter={(val) => formatCRC(Number(val))}
+                    formatter={(val) => formatAmount(Number(val))}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -304,7 +305,7 @@ export default function DashboardView() {
                   <span className="text-gray-600 dark:text-gray-400">{item.name}</span>
                 </div>
                 <span className="font-medium text-gray-700 dark:text-gray-200">
-                  {formatCRC(item.value)}
+                  {formatAmount(item.value)}
                 </span>
               </div>
             ))}
@@ -334,7 +335,7 @@ export default function DashboardView() {
                     backgroundColor: darkMode ? "#181a20" : "#fff",
                     color: darkMode ? "#e5e7eb" : "#374151",
                   }}
-                  formatter={(val) => formatCRC(Number(val))}
+                  formatter={(val) => formatAmount(Number(val))}
                 />
                 <Bar dataKey="value" radius={[8, 8, 0, 0]}>
                   {barData.map((entry, idx) => (
@@ -432,7 +433,7 @@ export default function DashboardView() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           <div className="bg-orange-50 dark:bg-orange-500/10 rounded-xl p-4 text-center">
             <p className="text-xs text-orange-400 font-medium mb-1">Ahorro Mensual</p>
-            <p className="text-lg font-bold text-orange-500">{formatCRC(totalSavings)}</p>
+            <p className="text-lg font-bold text-orange-500">{formatAmount(totalSavings)}</p>
           </div>
           <div className="bg-gray-50 dark:bg-dark-surface rounded-xl p-4 text-center">
             <p className="text-xs text-gray-400 font-medium mb-1">Deudas Activas</p>

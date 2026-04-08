@@ -4,7 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
 import { motion } from "framer-motion";
-import { Settings, RefreshCw, Save, User, Lock, Download, Upload, RotateCw, CheckCircle, AlertTriangle, Wifi, Loader2 } from "lucide-react";
+import { Settings, RefreshCw, Save, User, Lock, Download, Upload, RotateCw, CheckCircle, AlertTriangle, Wifi, Loader2, Globe2 } from "lucide-react";
+import { DISPLAY_CURRENCIES } from "@/types";
 
 async function fetchLiveRates(): Promise<{ USD_TO_CRC: number; EUR_TO_CRC: number } | null> {
   try {
@@ -26,7 +27,7 @@ async function fetchLiveRates(): Promise<{ USD_TO_CRC: number; EUR_TO_CRC: numbe
 }
 
 export default function SettingsView() {
-  const { exchangeRates, setExchangeRates, lastRatesUpdate, userName, setUserName, vaultPin, setVaultPin, exportData, importData, generateRecurring } = useStore(useShallow((s) => ({
+  const { exchangeRates, setExchangeRates, lastRatesUpdate, userName, setUserName, vaultPin, setVaultPin, exportData, importData, generateRecurring, displayCurrency, setDisplayCurrency } = useStore(useShallow((s) => ({
     exchangeRates: s.exchangeRates,
     setExchangeRates: s.setExchangeRates,
     lastRatesUpdate: s.lastRatesUpdate,
@@ -37,6 +38,8 @@ export default function SettingsView() {
     exportData: s.exportData,
     importData: s.importData,
     generateRecurring: s.generateRecurring,
+    displayCurrency: s.displayCurrency,
+    setDisplayCurrency: s.setDisplayCurrency,
   })));
   const [rates, setRates] = useState({ USD_TO_CRC: exchangeRates.USD_TO_CRC.toString(), EUR_TO_CRC: exchangeRates.EUR_TO_CRC.toString() });
   const [name, setName] = useState(userName);
@@ -48,7 +51,46 @@ export default function SettingsView() {
   const [recurringMsg, setRecurringMsg] = useState(false);
   const [fetchingRates, setFetchingRates] = useState(false);
   const [rateMsg, setRateMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [selectedCurr, setSelectedCurr] = useState(displayCurrency);
+  const [currSearch, setCurrSearch] = useState("");
+  const [fetchingDisplay, setFetchingDisplay] = useState(false);
+  const [displayMsg, setDisplayMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleApplyDisplayCurrency = useCallback(async () => {
+    const currMeta = DISPLAY_CURRENCIES.find((c) => c.code === selectedCurr);
+    if (!currMeta) return;
+    if (selectedCurr === "CRC") {
+      setDisplayCurrency("CRC", 1, "\u20a1", 0);
+      setDisplayMsg({ type: "ok", text: "Mostrando en Colones Costarricenses" });
+      setTimeout(() => setDisplayMsg(null), 3000);
+      return;
+    }
+    setFetchingDisplay(true);
+    setDisplayMsg(null);
+    try {
+      const res = await fetch("https://open.er-api.com/v6/latest/CRC");
+      const data = await res.json();
+      if (data.result !== "success" || !data.rates?.[selectedCurr]) {
+        setDisplayMsg({ type: "err", text: "No se pudo obtener la tasa. Intenta más tarde." });
+      } else {
+        const rate = data.rates[selectedCurr] as number;
+        setDisplayCurrency(currMeta.code, rate, currMeta.symbol, currMeta.decimals);
+        setDisplayMsg({ type: "ok", text: `Mostrando en ${currMeta.flag} ${currMeta.name} (1 \u20a1 = ${rate.toFixed(4)} ${currMeta.code})` });
+      }
+    } catch {
+      setDisplayMsg({ type: "err", text: "Error de conexión" });
+    } finally {
+      setFetchingDisplay(false);
+      setTimeout(() => setDisplayMsg(null), 5000);
+    }
+  }, [selectedCurr, setDisplayCurrency]);
+
+  const filteredCurrencies = DISPLAY_CURRENCIES.filter(
+    (c) =>
+      c.name.toLowerCase().includes(currSearch.toLowerCase()) ||
+      c.code.toLowerCase().includes(currSearch.toLowerCase())
+  );
 
   const handleFetchLiveRates = useCallback(async (silent = false) => {
     setFetchingRates(true);
@@ -213,6 +255,62 @@ export default function SettingsView() {
             Última actualización: {new Date(lastRatesUpdate).toLocaleString("es-CR", { dateStyle: "medium", timeStyle: "short" })}
           </p>
         )}
+      </motion.div>
+
+      {/* Display Currency */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className={cardClass}>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-400"><Globe2 className="w-5 h-5" /></div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Moneda de Visualización</h3>
+            <p className="text-xs text-gray-400">Elige en qué moneda se muestran los totales y montos en toda la app</p>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Moneda actual: <span className="font-semibold text-orange-500">{DISPLAY_CURRENCIES.find((c) => c.code === displayCurrency)?.flag} {DISPLAY_CURRENCIES.find((c) => c.code === displayCurrency)?.name}</span>
+          </p>
+          <input
+            type="text"
+            placeholder="Buscar moneda..."
+            value={currSearch}
+            onChange={(e) => setCurrSearch(e.target.value)}
+            className={inputClass}
+          />
+          <div className="max-h-52 overflow-y-auto rounded-xl border border-gray-200 dark:border-dark-border divide-y divide-gray-100 dark:divide-dark-border">
+            {filteredCurrencies.map((c) => (
+              <button
+                key={c.code}
+                onClick={() => setSelectedCurr(c.code)}
+                className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors text-sm ${
+                  selectedCurr === c.code
+                    ? "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400"
+                    : "hover:bg-gray-50 dark:hover:bg-dark-surface text-gray-700 dark:text-gray-300"
+                }`}
+              >
+                <span className="text-base">{c.flag}</span>
+                <span className="flex-1">{c.name}</span>
+                <span className="text-xs text-gray-400 font-mono">{c.code} {c.symbol}</span>
+                {selectedCurr === c.code && <CheckCircle className="w-4 h-4 text-orange-500 shrink-0" />}
+              </button>
+            ))}
+          </div>
+          {displayMsg && (
+            <div className={`flex items-center gap-2 text-xs ${displayMsg.type === "ok" ? "text-green-500" : "text-red-400"}`}>
+              {displayMsg.type === "ok" ? <CheckCircle className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+              {displayMsg.text}
+            </div>
+          )}
+          <motion.button
+            whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+            onClick={handleApplyDisplayCurrency}
+            disabled={fetchingDisplay}
+            className="flex items-center gap-2 px-6 py-2.5 bg-orange-400 hover:bg-orange-500 disabled:opacity-60 text-white font-medium rounded-xl transition-colors text-sm"
+          >
+            {fetchingDisplay ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe2 className="w-4 h-4" />}
+            {fetchingDisplay ? "Aplicando..." : "Aplicar moneda"}
+          </motion.button>
+        </div>
       </motion.div>
 
       {/* Recurring */}

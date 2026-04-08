@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
-import { formatCurrency, formatCRC, getTodayStr } from "@/lib/utils";
+import { formatCurrency, getTodayStr } from "@/lib/utils";
 import { Currency, CURRENCY_NAMES } from "@/types";
 import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, PiggyBank, Trash2, Edit3, TrendingUp, Target, Coins, ArrowUpCircle } from "lucide-react";
 
 export default function SavingsView() {
-  const { savings, addSaving, updateSaving, deleteSaving, addToSaving, convertToCRC, getTotalSavingsContributions } = useStore(useShallow((s) => ({
+  const { savings, addSaving, updateSaving, deleteSaving, addToSaving, convertToCRC, getTotalSavingsContributions, formatAmount } = useStore(useShallow((s) => ({
     savings: s.savings,
     addSaving: s.addSaving,
     updateSaving: s.updateSaving,
@@ -20,6 +20,7 @@ export default function SavingsView() {
     addToSaving: s.addToSaving,
     convertToCRC: s.convertToCRC,
     getTotalSavingsContributions: s.getTotalSavingsContributions,
+    formatAmount: s.formatAmount,
   })));
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -77,9 +78,9 @@ export default function SavingsView() {
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-6">
-        <StatCard title="Ahorro Mensual" value={formatCRC(totalMonthly)} icon={<PiggyBank className="w-5 h-5" />} accentColor="green" />
-        <StatCard title="Total Ahorrado" value={formatCRC(totalSavedCRC)} icon={<Coins className="w-5 h-5" />} accentColor="orange" />
-        <StatCard title="Meta Total" value={formatCRC(totalTargetCRC)} icon={<Target className="w-5 h-5" />} />
+        <StatCard title="Ahorro Mensual" value={formatAmount(totalMonthly)} icon={<PiggyBank className="w-5 h-5" />} accentColor="green" />
+        <StatCard title="Total Ahorrado" value={formatAmount(totalSavedCRC)} icon={<Coins className="w-5 h-5" />} accentColor="orange" />
+        <StatCard title="Meta Total" value={formatAmount(totalTargetCRC)} icon={<Target className="w-5 h-5" />} />
         <StatCard title="Progreso Global" value={`${totalTargetCRC > 0 ? Math.round((totalSavedCRC / totalTargetCRC) * 100) : 0}%`} icon={<TrendingUp className="w-5 h-5" />} accentColor="green" />
       </div>
 

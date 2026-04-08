@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
-import { formatCurrency, formatCRC, getTodayStr } from "@/lib/utils";
+import { formatCurrency, getTodayStr } from "@/lib/utils";
 import { Currency } from "@/types";
 import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, HandCoins, Trash2, Edit3, CheckCircle, ChevronDown, DollarSign, X, UserCheck, Clock, PlusCircle } from "lucide-react";
 
 export default function LoansView() {
-  const { loans, addLoan, updateLoan, deleteLoan, addLoanPayment, deleteLoanPayment, convertToCRC } = useStore(useShallow((s) => ({
+  const { loans, addLoan, updateLoan, deleteLoan, addLoanPayment, deleteLoanPayment, convertToCRC, formatAmount } = useStore(useShallow((s) => ({
     loans: s.loans,
     addLoan: s.addLoan,
     updateLoan: s.updateLoan,
@@ -20,6 +20,7 @@ export default function LoansView() {
     addLoanPayment: s.addLoanPayment,
     deleteLoanPayment: s.deleteLoanPayment,
     convertToCRC: s.convertToCRC,
+    formatAmount: s.formatAmount,
   })));
   const [showModal, setShowModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -144,9 +145,9 @@ export default function LoansView() {
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-6">
-        <StatCard title="Total Prestado" value={formatCRC(totalLent)} icon={<HandCoins className="w-5 h-5" />} accentColor="purple" />
-        <StatCard title="Total Recuperado" value={formatCRC(totalRecovered)} icon={<CheckCircle className="w-5 h-5" />} accentColor="green" />
-        <StatCard title="Pendiente por Cobrar" value={formatCRC(totalPending)} icon={<Clock className="w-5 h-5" />} accentColor="orange" />
+        <StatCard title="Total Prestado" value={formatAmount(totalLent)} icon={<HandCoins className="w-5 h-5" />} accentColor="purple" />
+        <StatCard title="Total Recuperado" value={formatAmount(totalRecovered)} icon={<CheckCircle className="w-5 h-5" />} accentColor="green" />
+        <StatCard title="Pendiente por Cobrar" value={formatAmount(totalPending)} icon={<Clock className="w-5 h-5" />} accentColor="orange" />
         <StatCard title="Préstamos Activos" value={`${activeLoans.length}`} subtitle={`${completedLoans.length} completados`} icon={<UserCheck className="w-5 h-5" />} />
       </div>
 
@@ -276,7 +277,7 @@ export default function LoansView() {
                           {loan.currency !== "CRC" && (
                             <div className="bg-blue-50 dark:bg-blue-500/10 rounded-xl p-3">
                               <p className="text-[10px] uppercase font-medium text-blue-600 dark:text-blue-400 tracking-wide">Equivalente en Colones</p>
-                              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">Prestado: {formatCRC(convertToCRC(loan.amount, loan.currency))} · Recuperado: {formatCRC(convertToCRC(totalPaid, loan.currency))}</p>
+                              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">Prestado: {formatAmount(convertToCRC(loan.amount, loan.currency))} · Recuperado: {formatAmount(convertToCRC(totalPaid, loan.currency))}</p>
                             </div>
                           )}
                         </div>

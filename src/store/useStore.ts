@@ -11,6 +11,7 @@ import type {
   Currency,
   ExpenseCategory,
   Subscription,
+  DisplayCurrencyCode,
 } from "@/types";
 
 interface ExchangeRates {
@@ -35,6 +36,11 @@ interface AppState {
   exchangeRates: ExchangeRates;
   lastRatesUpdate: string | null;
   dismissedNotifications: string[];
+  // Display currency
+  displayCurrency: DisplayCurrencyCode;
+  displayRate: number;     // 1 CRC = N displayCurrency
+  displaySymbol: string;
+  displayDecimals: number;
 
   // Actions
   setCurrentMonth: (month: string) => void;
@@ -44,6 +50,8 @@ interface AppState {
   dismissNotification: (id: string) => void;
   clearDismissedNotifications: () => void;
   setExchangeRates: (rates: ExchangeRates) => void;
+  setDisplayCurrency: (code: DisplayCurrencyCode, rate: number, symbol: string, decimals: number) => void;
+  formatAmount: (crcAmount: number) => string;
   generateRecurring: () => void;
   exportData: () => string;
   importData: (json: string) => boolean;
@@ -124,12 +132,18 @@ export const useStore = create<AppState>()(
     },
     lastRatesUpdate: null,
     dismissedNotifications: [],
+    displayCurrency: "CRC",
+    displayRate: 1,
+    displaySymbol: "\u20a1",
+    displayDecimals: 0,
 
       setCurrentMonth: (month) => set({ currentMonth: month }),
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
       setUserName: (name) => set({ userName: name }),
       setVaultPin: (pin) => set({ vaultPin: pin }),
       setExchangeRates: (rates) => set({ exchangeRates: rates, lastRatesUpdate: new Date().toISOString() }),
+      setDisplayCurrency: (code, rate, symbol, decimals) =>
+        set({ displayCurrency: code, displayRate: rate, displaySymbol: symbol, displayDecimals: decimals }),
       dismissNotification: (id) =>
         set((state) => ({
           dismissedNotifications: [...state.dismissedNotifications, id],
@@ -191,6 +205,10 @@ export const useStore = create<AppState>()(
           userName: state.userName,
           vaultPin: state.vaultPin,
           darkMode: state.darkMode,
+          displayCurrency: state.displayCurrency,
+          displayRate: state.displayRate,
+          displaySymbol: state.displaySymbol,
+          displayDecimals: state.displayDecimals,
         };
         return JSON.stringify(data, null, 2);
       },
@@ -211,6 +229,10 @@ export const useStore = create<AppState>()(
           if (data.userName) update.userName = data.userName;
           if (data.vaultPin) update.vaultPin = data.vaultPin;
           if (typeof data.darkMode === "boolean") update.darkMode = data.darkMode;
+          if (data.displayCurrency) update.displayCurrency = data.displayCurrency;
+          if (typeof data.displayRate === "number") update.displayRate = data.displayRate;
+          if (data.displaySymbol) update.displaySymbol = data.displaySymbol;
+          if (typeof data.displayDecimals === "number") update.displayDecimals = data.displayDecimals;
           set(update);
           return true;
         } catch {
@@ -446,6 +468,16 @@ export const useStore = create<AppState>()(
         });
         return categories;
       },
+
+      formatAmount: (crcAmount) => {
+        const { displayRate, displaySymbol, displayDecimals } = get();
+        const converted = crcAmount * displayRate;
+        const formatted = new Intl.NumberFormat("es-419", {
+          minimumFractionDigits: displayDecimals,
+          maximumFractionDigits: displayDecimals,
+        }).format(converted);
+        return `${displaySymbol}${formatted}`;
+      },
     })
 );
 
@@ -457,6 +489,7 @@ const PERSIST_KEYS: (keyof AppState)[] = [
   "currentMonth", "darkMode", "userName", "vaultPin",
   "incomes", "expenses", "debts", "savings", "vault", "loans", "subscriptions",
   "vaultUnlocked", "exchangeRates", "lastRatesUpdate", "dismissedNotifications",
+  "displayCurrency", "displayRate", "displaySymbol", "displayDecimals",
 ];
 
 function getSnapshot(): Record<string, unknown> {

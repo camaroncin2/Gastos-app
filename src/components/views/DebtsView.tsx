@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
-import { formatCurrency, formatCRC, getTodayStr } from "@/lib/utils";
+import { formatCurrency, getTodayStr } from "@/lib/utils";
 import { Currency } from "@/types";
 import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, CreditCard, Trash2, Edit3, CheckCircle, AlertCircle, Clock, ChevronDown, Calendar, DollarSign, X } from "lucide-react";
 
 export default function DebtsView() {
-  const { debts, addDebt, updateDebt, deleteDebt, makeDebtPayment, convertToCRC, getTotalDebtPayments } = useStore(useShallow((s) => ({
+  const { debts, addDebt, updateDebt, deleteDebt, makeDebtPayment, convertToCRC, getTotalDebtPayments, formatAmount } = useStore(useShallow((s) => ({
     debts: s.debts,
     addDebt: s.addDebt,
     updateDebt: s.updateDebt,
@@ -20,6 +20,7 @@ export default function DebtsView() {
     makeDebtPayment: s.makeDebtPayment,
     convertToCRC: s.convertToCRC,
     getTotalDebtPayments: s.getTotalDebtPayments,
+    formatAmount: s.formatAmount,
   })));
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -88,9 +89,9 @@ export default function DebtsView() {
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-6">
-        <StatCard title="Cuota Mensual Total" value={formatCRC(totalMonthly)} icon={<CreditCard className="w-5 h-5" />} accentColor="orange" />
-        <StatCard title="Deuda Restante" value={formatCRC(totalDebtRemaining)} icon={<AlertCircle className="w-5 h-5" />} accentColor="red" />
-        <StatCard title="Total Pagado" value={formatCRC(totalPaid)} icon={<CheckCircle className="w-5 h-5" />} accentColor="green" />
+        <StatCard title="Cuota Mensual Total" value={formatAmount(totalMonthly)} icon={<CreditCard className="w-5 h-5" />} accentColor="orange" />
+        <StatCard title="Deuda Restante" value={formatAmount(totalDebtRemaining)} icon={<AlertCircle className="w-5 h-5" />} accentColor="red" />
+        <StatCard title="Total Pagado" value={formatAmount(totalPaid)} icon={<CheckCircle className="w-5 h-5" />} accentColor="green" />
         <StatCard title="Deudas Activas" value={`${activeDebts.length}`} subtitle={`${completedDebts.length} completadas`} icon={<Clock className="w-5 h-5" />} />
       </div>
 
@@ -261,7 +262,7 @@ export default function DebtsView() {
                           {debt.currency !== "CRC" && (
                             <div className="bg-blue-50 dark:bg-blue-500/10 rounded-xl p-3">
                               <p className="text-[10px] uppercase font-medium text-blue-600 dark:text-blue-400 tracking-wide">Equivalente en Colones</p>
-                              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">Total: {formatCRC(convertToCRC(debt.totalAmount, debt.currency))} · Cuota: {formatCRC(convertToCRC(debt.monthlyPayment, debt.currency))}</p>
+                              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">Total: {formatAmount(convertToCRC(debt.totalAmount, debt.currency))} · Cuota: {formatAmount(convertToCRC(debt.monthlyPayment, debt.currency))}</p>
                             </div>
                           )}
                         </div>
