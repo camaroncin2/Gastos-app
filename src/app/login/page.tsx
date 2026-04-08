@@ -300,16 +300,28 @@ const FEATURES = [
   },
 ];
 
+// ── Palette per section index ───────────────────────────────────
+const SECTION_PALETTES = [
+  { panel: "bg-gradient-to-br from-orange-100 to-amber-50 dark:from-orange-900/25 dark:to-amber-900/10", dot1: "bg-orange-300/40", dot2: "bg-amber-200/40" },
+  { panel: "bg-gradient-to-br from-blue-100 to-sky-50 dark:from-blue-900/25 dark:to-sky-900/10",       dot1: "bg-blue-300/40",  dot2: "bg-sky-200/40" },
+  { panel: "bg-gradient-to-br from-rose-100 to-pink-50 dark:from-rose-900/25 dark:to-pink-900/10",     dot1: "bg-rose-300/40", dot2: "bg-pink-200/40" },
+  { panel: "bg-gradient-to-br from-green-100 to-emerald-50 dark:from-green-900/25 dark:to-emerald-900/10", dot1: "bg-green-300/40", dot2: "bg-emerald-200/40" },
+  { panel: "bg-gradient-to-br from-purple-100 to-violet-50 dark:from-purple-900/25 dark:to-violet-900/10", dot1: "bg-purple-300/40", dot2: "bg-violet-200/40" },
+  { panel: "bg-gradient-to-br from-teal-100 to-cyan-50 dark:from-teal-900/25 dark:to-cyan-900/10",     dot1: "bg-teal-300/40",  dot2: "bg-cyan-200/40" },
+  { panel: "bg-gradient-to-br from-indigo-100 to-blue-50 dark:from-indigo-900/25 dark:to-blue-900/10", dot1: "bg-indigo-300/40", dot2: "bg-blue-200/40" },
+];
+
 // ── Feature Section ──────────────────────────────────────────────
 
 function FeatureSection({ feature, reversed, index }: { feature: typeof FEATURES[0]; reversed: boolean; index: number }) {
   const { Mockup, Icon } = feature;
-  const isEven = index % 2 === 0;
+  const palette = SECTION_PALETTES[index % SECTION_PALETTES.length];
   return (
-    <section className="py-20 px-6 relative overflow-hidden">
-      <div className={`absolute inset-0 ${isEven ? "skew-y-1" : "-skew-y-1"} bg-gray-50 dark:bg-dark-card/30 -z-10`} />
-      <div className="max-w-5xl mx-auto relative">
-        <div className={`flex flex-col ${reversed ? "lg:flex-row-reverse" : "lg:flex-row"} items-center gap-10 lg:gap-16`}>
+    <section className="py-16 px-6 border-t border-gray-100 dark:border-dark-border">
+      <div className="max-w-6xl mx-auto">
+        <div className={`flex flex-col ${reversed ? "lg:flex-row-reverse" : "lg:flex-row"} items-center gap-10 lg:gap-20`}>
+
+          {/* ── Text column ── */}
           <motion.div
             initial={{ opacity: 0, x: reversed ? 40 : -40 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -334,15 +346,27 @@ function FeatureSection({ feature, reversed, index }: { feature: typeof FEATURES
               ))}
             </ul>
           </motion.div>
+
+          {/* ── Visual column: large colored panel + mockup card inside ── */}
           <motion.div
             initial={{ opacity: 0, x: reversed ? -40 : 40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="flex-1 w-full max-w-md"
+            className="flex-1 w-full"
           >
-            <Mockup />
+            {/* Large decorative panel (the "green" area in the sketch) */}
+            <div className={`relative rounded-3xl ${palette.panel} p-6 md:p-10 overflow-hidden`}>
+              {/* Background accent circles */}
+              <div className={`absolute -top-12 -right-12 w-48 h-48 rounded-full ${palette.dot1} blur-2xl`} />
+              <div className={`absolute -bottom-10 -left-10 w-36 h-36 rounded-full ${palette.dot2} blur-2xl`} />
+              {/* Browser-frame card (the "blue" box in the sketch) */}
+              <div className="relative z-10">
+                <Mockup />
+              </div>
+            </div>
           </motion.div>
+
         </div>
       </div>
     </section>

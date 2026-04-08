@@ -124,23 +124,21 @@ export default function TopBar({ activeView, onMenuToggle, isMobile }: TopBarPro
             <NotificationsPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
           </div>
 
-          {/* Avatar + logout */}
-          {!isMobile && (
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center">
-                <span className="text-sm font-bold text-orange-500">{userName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "U"}</span>
-              </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleLogout}
-                className="p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-surface text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                title="Cerrar sesión"
-              >
-                <LogOut className="w-5 h-5" />
-              </motion.button>
+          {/* Avatar + logout — visible on all screen sizes */}
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <div className="w-7 h-7 md:w-9 md:h-9 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center shrink-0">
+              <span className="text-xs md:text-sm font-bold text-orange-500">{userName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "U"}</span>
             </div>
-          )}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleLogout}
+              className="p-1.5 md:p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-surface text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-4 h-4 md:w-5 md:h-5" />
+            </motion.button>
+          </div>
         </div>
       </div>
 
