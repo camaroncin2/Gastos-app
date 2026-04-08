@@ -7,7 +7,7 @@ function getSecret() {
   return new TextEncoder().encode(secret);
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isLoginPage = pathname === "/login";
   const isApiAuth = pathname.startsWith("/api/auth");
