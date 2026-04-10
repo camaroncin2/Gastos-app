@@ -210,7 +210,7 @@ export default function SubscriptionsView() {
         {filtered.length === 0 ? (
           <EmptyState icon={<Repeat className="w-8 h-8" />} title="Sin suscripciones" description="Agrega tus servicios de streaming, software u otros." />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 items-start">
             {filtered.map(sub => {
               const Icon = CATEGORY_ICONS[sub.category];
               const StatusIcon = STATUS_CONFIG[sub.status].icon;

@@ -101,7 +101,7 @@ export default function SavingsView() {
         Object.entries(byCurrency).filter(([, items]) => items.length > 0).map(([currency, items]) => (
           <div key={currency} className="space-y-3">
             <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Ahorros en {CURRENCY_NAMES[currency as Currency]}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
               <AnimatePresence>
                 {items.map((saving, idx) => {
                   const progress = saving.targetAmount > 0 ? (saving.currentAmount / saving.targetAmount) * 100 : 0;
