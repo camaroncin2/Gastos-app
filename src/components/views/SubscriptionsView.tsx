@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Repeat, Trash2, Edit3, Tv, Music, Cloud, Gamepad2,
   Dumbbell, Newspaper, Package, Code, PauseCircle, XCircle, CheckCircle2,
+  ChevronDown, Calendar, DollarSign,
 } from "lucide-react";
 
 const CATEGORY_ICONS: Record<SubscriptionCategory, React.ElementType> = {
@@ -85,6 +86,8 @@ export default function SubscriptionsView() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<SubscriptionStatus | "all">("all");
   const [filterCategory, setFilterCategory] = useState<SubscriptionCategory | "all">("all");
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const toggleExpand = (id: string) => setExpandedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const [form, setForm] = useState(defaultForm);
 
   const resetForm = () => { setForm(defaultForm); setEditingId(null); };
@@ -213,50 +216,125 @@ export default function SubscriptionsView() {
               const StatusIcon = STATUS_CONFIG[sub.status].icon;
               const days = daysUntil(sub.nextBillingDate);
               const monthlyInCRC = convertToCRC(getMonthlyEquivalent(sub.amount, sub.billingCycle), sub.currency);
+              const yearlyInCRC = monthlyInCRC * 12;
+              const isExpanded = expandedIds.has(sub.id);
+              const fmtDate = (d: string) => new Date(d + "T12:00:00").toLocaleDateString("es-CR", { year: "numeric", month: "short", day: "numeric" });
               return (
                 <motion.div key={sub.id}
                   layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-                  className={`relative bg-white dark:bg-dark-card rounded-2xl border p-4 shadow-sm flex flex-col gap-3 transition-opacity ${sub.status === "cancelled" ? "opacity-50 border-red-200 dark:border-red-900/40" : "border-gray-200 dark:border-dark-border"}`}
+                  className={`relative bg-white dark:bg-dark-card rounded-2xl border shadow-sm flex flex-col overflow-hidden transition-opacity ${sub.status === "cancelled" ? "opacity-50 border-red-200 dark:border-red-900/40" : "border-gray-200 dark:border-dark-border"}`}
                 >
-                  {/* Header */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-500/10 flex items-center justify-center shrink-0">
-                        <Icon size={20} className="text-sky-500" />
+                  {/* Main card - clickable */}
+                  <div className="p-4 cursor-pointer" onClick={() => toggleExpand(sub.id)}>
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-500/10 flex items-center justify-center shrink-0">
+                          <Icon size={20} className="text-sky-500" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{sub.name}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">{SUBSCRIPTION_CATEGORY_LABELS[sub.category]}</p>
+                        </div>
                       </div>
+                      <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }} className="p-1 text-gray-400">
+                        <ChevronDown className="w-4 h-4" />
+                      </motion.div>
+                    </div>
+
+                    {/* Amount */}
+                    <div className="flex items-baseline justify-between mb-3">
                       <div>
-                        <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{sub.name}</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">{SUBSCRIPTION_CATEGORY_LABELS[sub.category]}</p>
+                        <span className="text-xl font-bold text-gray-800 dark:text-gray-100">{formatCurrency(sub.amount, sub.currency)}</span>
+                        <span className="ml-1 text-xs text-gray-400">/ {BILLING_CYCLE_LABELS[sub.billingCycle].toLowerCase()}</span>
                       </div>
+                      {sub.currency !== "CRC" && (
+                        <span className="text-xs text-gray-400">{formatAmount(monthlyInCRC)}/mes</span>
+                      )}
                     </div>
-                    <div className="flex gap-1 shrink-0">
-                      <button onClick={() => openEdit(sub)} className="p-1.5 rounded-lg text-gray-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-500/10 transition-colors"><Edit3 size={14} /></button>
-                      <button onClick={() => deleteSubscription(sub.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 size={14} /></button>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-dark-border">
+                      <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium ${STATUS_CONFIG[sub.status].className}`}>
+                        <StatusIcon size={12} />
+                        {STATUS_CONFIG[sub.status].label}
+                      </div>
+                      {sub.status === "active" && (
+                        <p className={`text-xs font-medium ${days <= 3 ? "text-red-500" : days <= 7 ? "text-yellow-500" : "text-gray-400 dark:text-gray-500"}`}>
+                          {days === 0 ? "¡Hoy!" : days < 0 ? "Vencida" : `en ${days}d`}
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  {/* Amount */}
-                  <div className="flex items-baseline justify-between">
-                    <div>
-                      <span className="text-xl font-bold text-gray-800 dark:text-gray-100">{formatCurrency(sub.amount, sub.currency)}</span>
-                      <span className="ml-1 text-xs text-gray-400">/ {BILLING_CYCLE_LABELS[sub.billingCycle].toLowerCase()}</span>
-                    </div>
-                    {sub.currency !== "CRC" && (
-                      <span className="text-xs text-gray-400">{formatAmount(monthlyInCRC)}/mes</span>
-                    )}
-                  </div>
+                  {/* Expanded detail panel */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-4 pb-4 border-t border-gray-100 dark:border-dark-border pt-4 space-y-4">
+                          {/* Key summary */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-sky-50 dark:bg-sky-500/10 rounded-xl p-3">
+                              <p className="text-[10px] uppercase font-medium text-sky-600 dark:text-sky-400 tracking-wide">Costo Mensual</p>
+                              <p className="text-sm font-bold text-sky-700 dark:text-sky-300 mt-0.5">{formatAmount(monthlyInCRC)}</p>
+                              <p className="text-[10px] text-sky-500 mt-0.5">{BILLING_CYCLE_LABELS[sub.billingCycle]}</p>
+                            </div>
+                            <div className="bg-purple-50 dark:bg-purple-500/10 rounded-xl p-3">
+                              <p className="text-[10px] uppercase font-medium text-purple-600 dark:text-purple-400 tracking-wide">Costo Anual</p>
+                              <p className="text-sm font-bold text-purple-700 dark:text-purple-300 mt-0.5">{formatAmount(yearlyInCRC)}</p>
+                              <p className="text-[10px] text-purple-500 mt-0.5">Estimado</p>
+                            </div>
+                          </div>
 
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-dark-border">
-                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium ${STATUS_CONFIG[sub.status].className}`}>
-                      <StatusIcon size={12} />
-                      {STATUS_CONFIG[sub.status].label}
-                    </div>
-                    {sub.status === "active" && (
-                      <p className={`text-xs font-medium ${days <= 3 ? "text-red-500" : days <= 7 ? "text-yellow-500" : "text-gray-400 dark:text-gray-500"}`}>
-                        {days === 0 ? "¡Hoy!" : days < 0 ? "Vencida" : `en ${days}d`}
-                      </p>
+                          {/* Billing details */}
+                          <div className="space-y-2">
+                            <h5 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5" /> Detalles de Cobro
+                            </h5>
+                            <div className="bg-gray-50 dark:bg-dark-surface rounded-xl p-3 space-y-1.5">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-gray-400">Fecha de inicio</span>
+                                <span className="font-semibold text-gray-700 dark:text-gray-200">{fmtDate(sub.startDate)}</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-gray-400">Próximo cobro</span>
+                                <span className={`font-semibold ${days <= 3 ? "text-red-500" : days <= 7 ? "text-yellow-500" : "text-gray-700 dark:text-gray-200"}`}>{fmtDate(sub.nextBillingDate)}</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-gray-400">Ciclo</span>
+                                <span className="font-semibold text-gray-700 dark:text-gray-200">{BILLING_CYCLE_LABELS[sub.billingCycle]}</span>
+                              </div>
+                              {sub.currency !== "CRC" && (
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-gray-400">Monto original</span>
+                                  <span className="font-semibold text-gray-700 dark:text-gray-200">{formatCurrency(sub.amount, sub.currency)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Notes */}
+                          {sub.notes && (
+                            <div className="bg-amber-50 dark:bg-amber-500/10 rounded-xl p-3">
+                              <p className="text-[10px] uppercase font-medium text-amber-600 dark:text-amber-400 tracking-wide">Notas</p>
+                              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">{sub.notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
                     )}
+                  </AnimatePresence>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center justify-end gap-1 px-4 pb-3">
+                    <button onClick={(e) => { e.stopPropagation(); openEdit(sub); }} className="p-1.5 rounded-lg text-gray-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-500/10 transition-colors"><Edit3 size={14} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); deleteSubscription(sub.id); }} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 size={14} /></button>
                   </div>
                 </motion.div>
               );

@@ -93,6 +93,15 @@ export default function FloatingCalculator({ open, onToggle }: Props) {
   const isOperator = (v: string) => ["÷", "×", "−", "+"].includes(v);
   const isEqual = (v: string) => v === "=";
 
+  const formatDisplay = (val: string) => {
+    if (val === "" || val === "-") return val;
+    const parts = val.split(".");
+    const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return parts.length > 1 ? `${intPart},${parts[1]}` : intPart;
+  };
+
+  const formatPrev = (val: string) => formatDisplay(val);
+
   return (
     <>
       {/* Floating button */}
@@ -140,12 +149,12 @@ export default function FloatingCalculator({ open, onToggle }: Props) {
             <div className="px-5 pt-5 pb-3 bg-gray-50 dark:bg-dark-surface">
               {op && prev !== null && (
                 <p className="text-xs text-gray-400 dark:text-gray-500 text-right h-4 truncate">
-                  {prev} {op}
+                  {formatPrev(prev)} {op}
                 </p>
               )}
               {!(op && prev !== null) && <p className="h-4" />}
               <p className="text-right text-3xl font-light text-gray-800 dark:text-gray-100 truncate mt-1">
-                {display}
+                {formatDisplay(display)}
               </p>
             </div>
 
