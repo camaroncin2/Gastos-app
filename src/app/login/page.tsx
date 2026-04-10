@@ -2,9 +2,10 @@
 
 import { motion } from "framer-motion";
 import {
-  Wallet, Sun, Moon, Check, ChevronDown,
+  Sun, Moon, Check, ChevronDown,
   BarChart2, DollarSign, CreditCard, TrendingDown, PiggyBank, Repeat, Shield,
 } from "lucide-react";
+import Image from "next/image";
 import { useStore } from "@/store/useStore";
 
 // ── Browser Frame wrapper ────────────────────────────────────────
@@ -386,8 +387,8 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-dark-bg/80 backdrop-blur-md border-b border-gray-100 dark:border-dark-border">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 rounded-xl bg-orange-500 flex items-center justify-center">
-              <Wallet className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-xl overflow-hidden">
+              <Image src={darkMode ? "/logo-dark.jpg" : "/logo-light.jpg"} alt="MisGastos" width={32} height={32} className="w-full h-full object-cover" />
             </div>
             <span className="font-bold text-gray-900 dark:text-white text-lg">MisGastos</span>
           </a>
@@ -408,8 +409,8 @@ export default function LandingPage() {
       <section className="pt-32 pb-24 px-6 text-center relative overflow-hidden">
         <div className="absolute inset-0 -skew-y-3 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/10 dark:to-amber-900/5 -z-10" />
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="max-w-3xl mx-auto">
-          <div className="w-20 h-20 rounded-3xl bg-orange-500 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-orange-200 dark:shadow-orange-900/30">
-            <Wallet className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 rounded-3xl overflow-hidden mx-auto mb-6 shadow-lg shadow-orange-200 dark:shadow-orange-900/30">
+            <Image src={darkMode ? "/logo-dark.jpg" : "/logo-light.jpg"} alt="MisGastos" width={80} height={80} className="w-full h-full object-cover" />
           </div>
           <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 leading-tight">
             Toma el control de<br /><span className="text-orange-500">tus finanzas</span>

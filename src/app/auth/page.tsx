@@ -3,7 +3,8 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Wallet, Loader2, Sun, Moon, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Loader2, Sun, Moon, ArrowLeft } from "lucide-react";
+import Image from "next/image";
 import { useStore } from "@/store/useStore";
 
 function AuthContent() {
@@ -76,8 +77,8 @@ function AuthContent() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <a href="/login" className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity">
-            <div className="w-14 h-14 rounded-2xl bg-orange-500 flex items-center justify-center mb-2 shadow-lg">
-              <Wallet className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 rounded-2xl overflow-hidden mb-2 shadow-lg">
+              <Image src={darkMode ? "/logo-dark.jpg" : "/logo-light.jpg"} alt="MisGastos" width={56} height={56} className="w-full h-full object-cover" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">MisGastos</h1>
           </a>
