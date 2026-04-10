@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MisGastos - Control de Finanzas Personales",
   description: "Aplicación web para gestionar gastos personales, ingresos, deudas y ahorros",
+  icons: {
+    icon: "/favicon.jpg",
+  },
 };
 
 export const viewport: Viewport = {
