@@ -35,6 +35,13 @@ export interface UserRow {
   password_hash: string;
 }
 
+export interface FullUserRow {
+  id: string;
+  email: string;
+  name: string;
+  password_hash: string;
+}
+
 export interface DataRow {
   data: string | null;
 }
@@ -54,6 +61,17 @@ export const db = {
     passwordHash: string;
   }): Promise<void> {
     await call("createUser", u);
+  },
+
+  /** Returns the user row (incl. email + hash) by id, or [] if none. */
+  async getUserById(id: string): Promise<FullUserRow[]> {
+    const r = await call("getUserById", { id });
+    return (r.rows ?? []) as unknown as FullUserRow[];
+  },
+
+  /** Replaces the password hash for a user. */
+  async updatePassword(id: string, passwordHash: string): Promise<void> {
+    await call("updatePassword", { id, passwordHash });
   },
 
   /** Returns the stored data blob for a user, or [] if none. */

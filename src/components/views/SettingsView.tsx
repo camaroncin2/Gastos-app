@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
 import { motion } from "framer-motion";
-import { Settings, RefreshCw, Save, User, Lock, Download, Upload, RotateCw, CheckCircle, AlertTriangle, Wifi, Loader2, Globe2 } from "lucide-react";
+import { Settings, RefreshCw, Save, User, Lock, KeyRound, Download, Upload, RotateCw, CheckCircle, AlertTriangle, Wifi, Loader2, Globe2 } from "lucide-react";
 import { DISPLAY_CURRENCIES } from "@/types";
 
 async function fetchLiveRates(): Promise<{ USD_TO_CRC: number; EUR_TO_CRC: number } | null> {
@@ -43,6 +43,9 @@ export default function SettingsView() {
   })));
   const [rates, setRates] = useState({ USD_TO_CRC: exchangeRates.USD_TO_CRC.toString(), EUR_TO_CRC: exchangeRates.EUR_TO_CRC.toString() });
   const [name, setName] = useState(userName);
+  const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
+  const [pwMsg, setPwMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [pwLoading, setPwLoading] = useState(false);
   const [pinForm, setPinForm] = useState({ current: "", newPin: "", confirm: "" });
   const [saved, setSaved] = useState(false);
   const [nameSaved, setNameSaved] = useState(false);
@@ -123,6 +126,33 @@ export default function SettingsView() {
     if (name.trim()) { setUserName(name.trim()); setNameSaved(true); setTimeout(() => setNameSaved(false), 2000); }
   };
 
+  const handleChangePassword = async () => {
+    setPwMsg(null);
+    if (!pwForm.current || !pwForm.newPw) { setPwMsg({ type: "err", text: "Completá todos los campos" }); return; }
+    if (pwForm.newPw.length < 6) { setPwMsg({ type: "err", text: "La nueva contraseña debe tener al menos 6 caracteres" }); return; }
+    if (pwForm.newPw !== pwForm.confirm) { setPwMsg({ type: "err", text: "Las contraseñas no coinciden" }); return; }
+    setPwLoading(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: pwForm.current, newPassword: pwForm.newPw }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPwMsg({ type: "err", text: data.error || "No se pudo cambiar la contraseña" });
+      } else {
+        setPwForm({ current: "", newPw: "", confirm: "" });
+        setPwMsg({ type: "ok", text: "Contraseña actualizada correctamente" });
+      }
+    } catch {
+      setPwMsg({ type: "err", text: "Error de conexión" });
+    } finally {
+      setPwLoading(false);
+      setTimeout(() => setPwMsg(null), 4000);
+    }
+  };
+
   const handleChangePin = () => {
     setPinMsg(null);
     if (pinForm.current !== vaultPin) { setPinMsg({ type: "err", text: "PIN actual incorrecto" }); return; }
@@ -182,6 +212,35 @@ export default function SettingsView() {
           <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={handleSaveName}
             className="px-6 py-2.5 bg-orange-400 hover:bg-orange-500 text-white font-medium rounded-xl transition-colors text-sm whitespace-nowrap">
             {nameSaved ? "¡Guardado!" : "Guardar"}
+          </motion.button>
+        </div>
+      </motion.div>
+
+      {/* Account Password */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }} className={cardClass}>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-400"><KeyRound className="w-5 h-5" /></div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Contraseña de la Cuenta</h3>
+            <p className="text-xs text-gray-400">Cambia la contraseña con la que inicias sesión</p>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <input type="password" value={pwForm.current} onChange={(e) => setPwForm({ ...pwForm, current: e.target.value })} placeholder="Contraseña actual" autoComplete="current-password" className={inputClass} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input type="password" value={pwForm.newPw} onChange={(e) => setPwForm({ ...pwForm, newPw: e.target.value })} placeholder="Nueva contraseña" autoComplete="new-password" className={inputClass} />
+            <input type="password" value={pwForm.confirm} onChange={(e) => setPwForm({ ...pwForm, confirm: e.target.value })} placeholder="Confirmar nueva" autoComplete="new-password" className={inputClass} />
+          </div>
+          {pwMsg && (
+            <div className={`flex items-center gap-2 text-xs ${pwMsg.type === "ok" ? "text-green-500" : "text-red-400"}`}>
+              {pwMsg.type === "ok" ? <CheckCircle className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+              {pwMsg.text}
+            </div>
+          )}
+          <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={handleChangePassword} disabled={pwLoading}
+            className="flex items-center gap-2 px-6 py-2.5 bg-orange-400 hover:bg-orange-500 disabled:opacity-60 text-white font-medium rounded-xl transition-colors text-sm">
+            {pwLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+            {pwLoading ? "Cambiando..." : "Cambiar Contraseña"}
           </motion.button>
         </div>
       </motion.div>
@@ -367,7 +426,7 @@ export default function SettingsView() {
           </div>
         </div>
         <div className="text-xs text-gray-400 space-y-1">
-          <p>Los datos se almacenan localmente en tu navegador usando LocalStorage.</p>
+          <p>Tus datos se guardan de forma segura en tu propio servidor y se sincronizan automáticamente.</p>
           <p>Las contraseñas de la bóveda se encriptan con AES-256.</p>
           <p>Todos los cálculos multimoneda se hacen en tiempo real.</p>
         </div>
