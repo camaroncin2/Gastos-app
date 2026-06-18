@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { neon } from "@neondatabase/serverless";
+import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { signToken, COOKIE_NAME } from "@/lib/auth";
 import { randomUUID } from "crypto";
@@ -12,21 +12,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email y contraseña requeridos" }, { status: 400 });
     }
 
-    const sql = neon(process.env.DATABASE_URL!);
-
     if (mode === "register") {
       if (!name) {
         return NextResponse.json({ error: "Nombre requerido" }, { status: 400 });
       }
       // Check if user already exists
-      const existing = await sql`SELECT id FROM users WHERE email = ${email}`;
+      const existing = await db.findUserByEmail(email);
       if (existing.length > 0) {
         return NextResponse.json({ error: "Ya existe una cuenta con ese email" }, { status: 409 });
       }
       const hash = await bcrypt.hash(password, 12);
       const id = randomUUID();
-      await sql`INSERT INTO users (id, email, name, password_hash) VALUES (${id}, ${email}, ${name}, ${hash})`;
-      await sql`INSERT INTO app_data (user_id, data) VALUES (${id}, 'null') ON CONFLICT DO NOTHING`;
+      await db.createUser({ id, email, name, passwordHash: hash });
 
       const token = await signToken(id);
       const response = NextResponse.json({ ok: true, name });
@@ -41,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     // Login mode
-    const users = await sql`SELECT id, name, password_hash FROM users WHERE email = ${email}`;
+    const users = await db.findUserByEmail(email);
     if (users.length === 0) {
       return NextResponse.json({ error: "Email o contraseña incorrectos" }, { status: 401 });
     }

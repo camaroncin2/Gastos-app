@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
-import { neon } from "@neondatabase/serverless";
+import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-
-function getDb() {
-  return neon(process.env.DATABASE_URL!);
-}
 
 export async function GET() {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json(null, { status: 401 });
 
-    const sql = getDb();
-    const rows = await sql`SELECT data FROM app_data WHERE user_id = ${session.userId}`;
+    const rows = await db.getData(session.userId);
     if (rows.length === 0) return NextResponse.json(null);
     return new NextResponse(rows[0].data as string, {
       headers: { "Content-Type": "application/json" },
@@ -28,11 +23,7 @@ export async function POST(request: Request) {
     if (!session) return NextResponse.json({ ok: false }, { status: 401 });
 
     const body = await request.text();
-    const sql = getDb();
-    await sql`
-      INSERT INTO app_data (user_id, data) VALUES (${session.userId}, ${body})
-      ON CONFLICT (user_id) DO UPDATE SET data = EXCLUDED.data
-    `;
+    await db.setData(session.userId, body);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ ok: false }, { status: 500 });
