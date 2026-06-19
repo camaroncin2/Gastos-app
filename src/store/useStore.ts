@@ -24,7 +24,7 @@ interface AppState {
   currentMonth: string;
   darkMode: boolean;
   userName: string;
-  vaultPin: string;
+  vaultCheck: string; // verifier ciphertext; the passphrase itself is NEVER stored
   incomes: Income[];
   expenses: Expense[];
   debts: Debt[];
@@ -46,7 +46,7 @@ interface AppState {
   setCurrentMonth: (month: string) => void;
   toggleDarkMode: () => void;
   setUserName: (name: string) => void;
-  setVaultPin: (pin: string) => void;
+  setVaultCheck: (check: string) => void;
   dismissNotification: (id: string) => void;
   clearDismissedNotifications: () => void;
   setExchangeRates: (rates: ExchangeRates) => void;
@@ -117,7 +117,7 @@ export const useStore = create<AppState>()(
     currentMonth: getCurrentMonth(),
     darkMode: false,
     userName: "Usuario",
-    vaultPin: "1234",
+    vaultCheck: "",
     incomes: [],
     expenses: [],
     debts: [],
@@ -140,7 +140,7 @@ export const useStore = create<AppState>()(
       setCurrentMonth: (month) => set({ currentMonth: month }),
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
       setUserName: (name) => set({ userName: name }),
-      setVaultPin: (pin) => set({ vaultPin: pin }),
+      setVaultCheck: (check) => set({ vaultCheck: check }),
       setExchangeRates: (rates) => set({ exchangeRates: rates, lastRatesUpdate: new Date().toISOString() }),
       setDisplayCurrency: (code, rate, symbol, decimals) =>
         set({ displayCurrency: code, displayRate: rate, displaySymbol: symbol, displayDecimals: decimals }),
@@ -203,7 +203,7 @@ export const useStore = create<AppState>()(
           subscriptions: state.subscriptions,
           exchangeRates: state.exchangeRates,
           userName: state.userName,
-          vaultPin: state.vaultPin,
+          vaultCheck: state.vaultCheck,
           darkMode: state.darkMode,
           displayCurrency: state.displayCurrency,
           displayRate: state.displayRate,
@@ -227,7 +227,7 @@ export const useStore = create<AppState>()(
           if (Array.isArray(data.subscriptions)) update.subscriptions = data.subscriptions;
           if (data.exchangeRates) update.exchangeRates = data.exchangeRates;
           if (data.userName) update.userName = data.userName;
-          if (data.vaultPin) update.vaultPin = data.vaultPin;
+          if (typeof data.vaultCheck === "string") update.vaultCheck = data.vaultCheck;
           if (typeof data.darkMode === "boolean") update.darkMode = data.darkMode;
           if (data.displayCurrency) update.displayCurrency = data.displayCurrency;
           if (typeof data.displayRate === "number") update.displayRate = data.displayRate;
@@ -486,9 +486,9 @@ export const useStore = create<AppState>()(
 type Persistable = Omit<AppState, "_ready" | keyof ReturnType<typeof Object.getOwnPropertyNames>>;
 
 const PERSIST_KEYS: (keyof AppState)[] = [
-  "currentMonth", "darkMode", "userName", "vaultPin",
+  "currentMonth", "darkMode", "userName", "vaultCheck",
   "incomes", "expenses", "debts", "savings", "vault", "loans", "subscriptions",
-  "vaultUnlocked", "exchangeRates", "lastRatesUpdate", "dismissedNotifications",
+  "exchangeRates", "lastRatesUpdate", "dismissedNotifications",
   "displayCurrency", "displayRate", "displaySymbol", "displayDecimals",
 ];
 

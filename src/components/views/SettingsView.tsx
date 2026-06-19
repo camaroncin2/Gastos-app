@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
 import { motion } from "framer-motion";
-import { Settings, RefreshCw, Save, User, Lock, KeyRound, Download, Upload, RotateCw, CheckCircle, AlertTriangle, Wifi, Loader2, Globe2 } from "lucide-react";
+import { Settings, RefreshCw, Save, User, KeyRound, Download, Upload, RotateCw, CheckCircle, AlertTriangle, Wifi, Loader2, Globe2 } from "lucide-react";
 import { DISPLAY_CURRENCIES } from "@/types";
 
 async function fetchLiveRates(): Promise<{ USD_TO_CRC: number; EUR_TO_CRC: number } | null> {
@@ -27,14 +27,12 @@ async function fetchLiveRates(): Promise<{ USD_TO_CRC: number; EUR_TO_CRC: numbe
 }
 
 export default function SettingsView() {
-  const { exchangeRates, setExchangeRates, lastRatesUpdate, userName, setUserName, vaultPin, setVaultPin, exportData, importData, generateRecurring, displayCurrency, setDisplayCurrency } = useStore(useShallow((s) => ({
+  const { exchangeRates, setExchangeRates, lastRatesUpdate, userName, setUserName, exportData, importData, generateRecurring, displayCurrency, setDisplayCurrency } = useStore(useShallow((s) => ({
     exchangeRates: s.exchangeRates,
     setExchangeRates: s.setExchangeRates,
     lastRatesUpdate: s.lastRatesUpdate,
     userName: s.userName,
     setUserName: s.setUserName,
-    vaultPin: s.vaultPin,
-    setVaultPin: s.setVaultPin,
     exportData: s.exportData,
     importData: s.importData,
     generateRecurring: s.generateRecurring,
@@ -46,10 +44,8 @@ export default function SettingsView() {
   const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
   const [pwMsg, setPwMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [pwLoading, setPwLoading] = useState(false);
-  const [pinForm, setPinForm] = useState({ current: "", newPin: "", confirm: "" });
   const [saved, setSaved] = useState(false);
   const [nameSaved, setNameSaved] = useState(false);
-  const [pinMsg, setPinMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [importMsg, setImportMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [recurringMsg, setRecurringMsg] = useState(false);
   const [fetchingRates, setFetchingRates] = useState(false);
@@ -153,17 +149,6 @@ export default function SettingsView() {
     }
   };
 
-  const handleChangePin = () => {
-    setPinMsg(null);
-    if (pinForm.current !== vaultPin) { setPinMsg({ type: "err", text: "PIN actual incorrecto" }); return; }
-    if (pinForm.newPin.length < 4) { setPinMsg({ type: "err", text: "El nuevo PIN debe tener al menos 4 caracteres" }); return; }
-    if (pinForm.newPin !== pinForm.confirm) { setPinMsg({ type: "err", text: "Los PINs no coinciden" }); return; }
-    setVaultPin(pinForm.newPin);
-    setPinForm({ current: "", newPin: "", confirm: "" });
-    setPinMsg({ type: "ok", text: "PIN actualizado correctamente" });
-    setTimeout(() => setPinMsg(null), 3000);
-  };
-
   const handleExport = () => {
     const json = exportData();
     const blob = new Blob([json], { type: "application/json" });
@@ -241,34 +226,6 @@ export default function SettingsView() {
             className="flex items-center gap-2 px-6 py-2.5 bg-orange-400 hover:bg-orange-500 disabled:opacity-60 text-white font-medium rounded-xl transition-colors text-sm">
             {pwLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
             {pwLoading ? "Cambiando..." : "Cambiar Contraseña"}
-          </motion.button>
-        </div>
-      </motion.div>
-
-      {/* Vault PIN */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className={cardClass}>
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-400"><Lock className="w-5 h-5" /></div>
-          <div>
-            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">PIN de la Bóveda</h3>
-            <p className="text-xs text-gray-400">Cambia el PIN para acceder a la bóveda segura</p>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <input type="password" value={pinForm.current} onChange={(e) => setPinForm({ ...pinForm, current: e.target.value })} placeholder="PIN actual" maxLength={10} className={inputClass} />
-          <div className="grid grid-cols-2 gap-3">
-            <input type="password" value={pinForm.newPin} onChange={(e) => setPinForm({ ...pinForm, newPin: e.target.value })} placeholder="Nuevo PIN" maxLength={10} className={inputClass} />
-            <input type="password" value={pinForm.confirm} onChange={(e) => setPinForm({ ...pinForm, confirm: e.target.value })} placeholder="Confirmar PIN" maxLength={10} className={inputClass} />
-          </div>
-          {pinMsg && (
-            <div className={`flex items-center gap-2 text-xs ${pinMsg.type === "ok" ? "text-green-500" : "text-red-400"}`}>
-              {pinMsg.type === "ok" ? <CheckCircle className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-              {pinMsg.text}
-            </div>
-          )}
-          <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={handleChangePin}
-            className="flex items-center gap-2 px-6 py-2.5 bg-orange-400 hover:bg-orange-500 text-white font-medium rounded-xl transition-colors text-sm">
-            <Lock className="w-4 h-4" />Cambiar PIN
           </motion.button>
         </div>
       </motion.div>

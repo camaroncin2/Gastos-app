@@ -1,44 +1,98 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
 import { encrypt, decrypt } from "@/lib/crypto";
 import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ShieldCheck, Trash2, Edit3, Eye, EyeOff, Lock, Unlock, Key, Copy, Check } from "lucide-react";
+import { Plus, ShieldCheck, Trash2, Edit3, Eye, EyeOff, Lock, Unlock, Key, Copy, Check, AlertTriangle } from "lucide-react";
+
+// Plaintext sentinel encrypted with the passphrase to make a verifier we can
+// safely store (it can't be reversed to the passphrase). The passphrase itself
+// is NEVER stored or synced — it lives only in this component's memory.
+const VAULT_SENTINEL = "MISGASTOS_VAULT_OK_v1";
 
 export default function VaultView() {
-  const { vault, vaultUnlocked, vaultPin, addVaultEntry, updateVaultEntry, deleteVaultEntry, setVaultUnlocked } = useStore(useShallow((s) => ({
+  const { vault, vaultUnlocked, vaultCheck, addVaultEntry, updateVaultEntry, deleteVaultEntry, setVaultUnlocked, setVaultCheck } = useStore(useShallow((s) => ({
     vault: s.vault,
     vaultUnlocked: s.vaultUnlocked,
-    vaultPin: s.vaultPin,
+    vaultCheck: s.vaultCheck,
     addVaultEntry: s.addVaultEntry,
     updateVaultEntry: s.updateVaultEntry,
     deleteVaultEntry: s.deleteVaultEntry,
     setVaultUnlocked: s.setVaultUnlocked,
+    setVaultCheck: s.setVaultCheck,
   })));
-  const [pin, setPin] = useState("");
-  const [pinError, setPinError] = useState(false);
+
+  // The passphrase (encryption key) lives ONLY in memory.
+  const [passphrase, setPassphrase] = useState("");
+  const hasVault = !!vaultCheck; // a passphrase was set up before
+
+  // setup / unlock form
+  const [pass1, setPass1] = useState("");
+  const [pass2, setPass2] = useState("");
+  const [unlockError, setUnlockError] = useState("");
+
+  // entry form
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", username: "", password: "", pin: "", notes: "", category: "banco" });
 
+  // change passphrase
+  const [showChangePass, setShowChangePass] = useState(false);
+  const [cpForm, setCpForm] = useState({ current: "", next: "", confirm: "" });
+  const [cpMsg, setCpMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
   const resetForm = () => { setForm({ name: "", username: "", password: "", pin: "", notes: "", category: "banco" }); setEditingId(null); };
 
+  const lock = useCallback(() => {
+    setVaultUnlocked(false);
+    setPassphrase("");
+    setRevealedIds(new Set());
+  }, [setVaultUnlocked]);
+
+  // Auto-lock after 5 minutes
   useEffect(() => {
     if (!vaultUnlocked) return;
-    const timer = setTimeout(() => { setVaultUnlocked(false); setRevealedIds(new Set()); }, 5 * 60 * 1000);
+    const timer = setTimeout(() => lock(), 5 * 60 * 1000);
     return () => clearTimeout(timer);
-  }, [vaultUnlocked, setVaultUnlocked]);
+  }, [vaultUnlocked, lock]);
+
+  const verify = (pass: string): boolean => {
+    if (!vaultCheck) return false;
+    try { return decrypt(vaultCheck, pass) === VAULT_SENTINEL; } catch { return false; }
+  };
+
+  const handleSetup = (e: React.FormEvent) => {
+    e.preventDefault();
+    setUnlockError("");
+    if (pass1.length < 6) { setUnlockError("La frase debe tener al menos 6 caracteres"); return; }
+    if (pass1 !== pass2) { setUnlockError("Las frases no coinciden"); return; }
+    setVaultCheck(encrypt(VAULT_SENTINEL, pass1));
+    setPassphrase(pass1);
+    setVaultUnlocked(true);
+    setPass1(""); setPass2("");
+  };
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin === vaultPin) { setVaultUnlocked(true); setPinError(false); setPin(""); }
-    else setPinError(true);
+    if (verify(pass1)) {
+      setPassphrase(pass1);
+      setVaultUnlocked(true);
+      setUnlockError("");
+      setPass1("");
+    } else {
+      setUnlockError("Frase incorrecta. Intenta de nuevo.");
+    }
+  };
+
+  const decryptField = (encrypted: string): string => {
+    if (!encrypted) return "";
+    try { return decrypt(encrypted, passphrase); } catch { return "***"; }
   };
 
   const openEdit = (entry: typeof vault[0]) => {
@@ -57,14 +111,36 @@ export default function VaultView() {
     if (!form.name) return;
     const data = {
       name: form.name, username: form.username,
-      encryptedPassword: form.password ? encrypt(form.password, vaultPin) : "",
-      encryptedPin: form.pin ? encrypt(form.pin, vaultPin) : "",
+      encryptedPassword: form.password ? encrypt(form.password, passphrase) : "",
+      encryptedPin: form.pin ? encrypt(form.pin, passphrase) : "",
       notes: form.notes, category: form.category,
     };
     if (editingId) updateVaultEntry(editingId, data);
     else addVaultEntry(data);
     resetForm();
     setShowModal(false);
+  };
+
+  const handleChangePassphrase = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCpMsg(null);
+    if (!verify(cpForm.current)) { setCpMsg({ type: "err", text: "La frase actual es incorrecta" }); return; }
+    if (cpForm.next.length < 6) { setCpMsg({ type: "err", text: "La nueva frase debe tener al menos 6 caracteres" }); return; }
+    if (cpForm.next !== cpForm.confirm) { setCpMsg({ type: "err", text: "Las frases nuevas no coinciden" }); return; }
+    // Re-encrypt every entry with the new passphrase.
+    vault.forEach((entry) => {
+      const pw = entry.encryptedPassword ? decrypt(entry.encryptedPassword, cpForm.current) : "";
+      const pin = entry.encryptedPin ? decrypt(entry.encryptedPin, cpForm.current) : "";
+      updateVaultEntry(entry.id, {
+        encryptedPassword: pw ? encrypt(pw, cpForm.next) : "",
+        encryptedPin: pin ? encrypt(pin, cpForm.next) : "",
+      });
+    });
+    setVaultCheck(encrypt(VAULT_SENTINEL, cpForm.next));
+    setPassphrase(cpForm.next);
+    setCpForm({ current: "", next: "", confirm: "" });
+    setCpMsg({ type: "ok", text: "Frase actualizada correctamente" });
+    setTimeout(() => { setCpMsg(null); setShowChangePass(false); }, 1500);
   };
 
   const toggleReveal = (id: string) => {
@@ -77,11 +153,9 @@ export default function VaultView() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const decryptField = (encrypted: string): string => {
-    if (!encrypted) return "";
-    try { return decrypt(encrypted, vaultPin); } catch { return "***"; }
-  };
+  const lockInput = `w-full px-4 py-3 rounded-xl border text-center focus:outline-none focus:ring-2 bg-white dark:bg-dark-surface dark:text-gray-100 ${unlockError ? "border-red-300 focus:ring-red-300" : "border-gray-200 dark:border-dark-border focus:ring-orange-300"}`;
 
+  // ── Locked: setup (first time) or unlock ──────────────────────────
   if (!vaultUnlocked) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -91,21 +165,42 @@ export default function VaultView() {
             className="inline-flex p-5 rounded-2xl bg-orange-50 dark:bg-orange-500/10 text-orange-400 mb-6">
             <Lock className="w-10 h-10" />
           </motion.div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Bóveda Segura</h2>
-          <p className="text-sm text-gray-400 mb-6">Ingresa tu PIN para acceder a tus contraseñas y datos bancarios</p>
-          <form onSubmit={handleUnlock} className="space-y-4">
-            <input type="password" value={pin} onChange={(e) => { setPin(e.target.value); setPinError(false); }} placeholder="PIN de acceso" maxLength={10}
-              className={`w-full px-4 py-3 rounded-xl border text-center text-lg tracking-widest font-mono focus:outline-none focus:ring-2 ${pinError ? "border-red-300 focus:ring-red-300" : "border-gray-200 focus:ring-orange-300"}`} autoFocus />
-            {pinError && <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-400">PIN incorrecto. Intenta de nuevo.</motion.p>}
-            <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} type="submit"
-              className="w-full py-3 bg-orange-400 hover:bg-orange-500 text-white font-medium rounded-xl transition-colors">Desbloquear</motion.button>
-          </form>
-          <p className="text-xs text-gray-300 mt-4">Configura tu PIN en Ajustes</p>
+
+          {!hasVault ? (
+            <>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Crear tu Bóveda</h2>
+              <p className="text-sm text-gray-400 mb-4">Elegí una frase secreta para cifrar tus contraseñas y datos bancarios.</p>
+              <div className="flex items-start gap-2 text-left text-xs text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-500/10 rounded-xl p-3 mb-5">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Esta frase <b>no se guarda en ningún servidor</b>. Si la olvidás, <b>no hay forma de recuperar</b> lo que guardes en la bóveda. Anotala en un lugar seguro o un gestor de contraseñas.</span>
+              </div>
+              <form onSubmit={handleSetup} className="space-y-4">
+                <input type="password" value={pass1} onChange={(e) => { setPass1(e.target.value); setUnlockError(""); }} placeholder="Frase secreta" className={lockInput} autoFocus />
+                <input type="password" value={pass2} onChange={(e) => { setPass2(e.target.value); setUnlockError(""); }} placeholder="Confirmar frase" className={lockInput} />
+                {unlockError && <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-400">{unlockError}</motion.p>}
+                <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} type="submit"
+                  className="w-full py-3 bg-orange-400 hover:bg-orange-500 text-white font-medium rounded-xl transition-colors">Crear Bóveda</motion.button>
+              </form>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Bóveda Segura</h2>
+              <p className="text-sm text-gray-400 mb-6">Ingresá tu frase secreta para acceder a tus contraseñas y datos bancarios</p>
+              <form onSubmit={handleUnlock} className="space-y-4">
+                <input type="password" value={pass1} onChange={(e) => { setPass1(e.target.value); setUnlockError(""); }} placeholder="Frase secreta" className={lockInput} autoFocus />
+                {unlockError && <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-400">{unlockError}</motion.p>}
+                <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} type="submit"
+                  className="w-full py-3 bg-orange-400 hover:bg-orange-500 text-white font-medium rounded-xl transition-colors">Desbloquear</motion.button>
+              </form>
+              <p className="text-xs text-gray-300 mt-4">Si olvidaste la frase, no es posible recuperar el contenido.</p>
+            </>
+          )}
         </motion.div>
       </div>
     );
   }
 
+  // ── Unlocked ──────────────────────────────────────────────────────
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -113,11 +208,15 @@ export default function VaultView() {
           <div className="p-2 rounded-xl bg-green-50 dark:bg-green-500/10 text-green-500"><Unlock className="w-5 h-5" /></div>
           <div>
             <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">Bóveda Desbloqueada</h2>
-            <p className="text-xs text-gray-400">Se bloqueará automáticamente en 5 minutos de inactividad</p>
+            <p className="text-xs text-gray-400">Se bloqueará automáticamente en 5 minutos</p>
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setVaultUnlocked(false); setRevealedIds(new Set()); }}
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setCpForm({ current: "", next: "", confirm: "" }); setCpMsg(null); setShowChangePass(true); }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-dark-border hover:bg-gray-200 dark:hover:bg-dark-surface text-gray-600 dark:text-gray-300 text-sm font-medium rounded-xl transition-colors">
+            <Key className="w-4 h-4" />Cambiar frase
+          </motion.button>
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={lock}
             className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-dark-border hover:bg-gray-200 dark:hover:bg-dark-surface text-gray-600 dark:text-gray-300 text-sm font-medium rounded-xl transition-colors">
             <Lock className="w-4 h-4" />Bloquear
           </motion.button>
@@ -236,6 +335,28 @@ export default function VaultView() {
           <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} type="submit"
             className="w-full py-2.5 bg-orange-400 hover:bg-orange-500 text-white font-medium rounded-xl transition-colors">
             {editingId ? "Guardar Cambios" : "Guardar en Bóveda"}
+          </motion.button>
+        </form>
+      </Modal>
+
+      <Modal isOpen={showChangePass} onClose={() => { setShowChangePass(false); setCpForm({ current: "", next: "", confirm: "" }); setCpMsg(null); }} title="Cambiar frase de la Bóveda">
+        <form onSubmit={handleChangePassphrase} className="space-y-4">
+          <p className="text-xs text-gray-500">Se volverán a cifrar todas las entradas con la frase nueva. Si la olvidás, no hay recuperación.</p>
+          <input type="password" value={cpForm.current} onChange={(e) => setCpForm({ ...cpForm, current: e.target.value })} placeholder="Frase actual"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+          <input type="password" value={cpForm.next} onChange={(e) => setCpForm({ ...cpForm, next: e.target.value })} placeholder="Nueva frase"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+          <input type="password" value={cpForm.confirm} onChange={(e) => setCpForm({ ...cpForm, confirm: e.target.value })} placeholder="Confirmar nueva frase"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+          {cpMsg && (
+            <div className={`flex items-center gap-2 text-xs ${cpMsg.type === "ok" ? "text-green-500" : "text-red-400"}`}>
+              {cpMsg.type === "ok" ? <Check className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+              {cpMsg.text}
+            </div>
+          )}
+          <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} type="submit"
+            className="w-full py-2.5 bg-orange-400 hover:bg-orange-500 text-white font-medium rounded-xl transition-colors">
+            Cambiar frase
           </motion.button>
         </form>
       </Modal>
