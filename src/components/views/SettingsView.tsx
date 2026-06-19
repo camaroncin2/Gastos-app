@@ -129,7 +129,7 @@ export default function SettingsView() {
   const handleChangePassword = async () => {
     setPwMsg(null);
     if (!pwForm.current || !pwForm.newPw) { setPwMsg({ type: "err", text: "Completá todos los campos" }); return; }
-    if (pwForm.newPw.length < 6) { setPwMsg({ type: "err", text: "La nueva contraseña debe tener al menos 6 caracteres" }); return; }
+    if (pwForm.newPw.length < 8) { setPwMsg({ type: "err", text: "La nueva contraseña debe tener al menos 8 caracteres" }); return; }
     if (pwForm.newPw !== pwForm.confirm) { setPwMsg({ type: "err", text: "Las contraseñas no coinciden" }); return; }
     setPwLoading(true);
     try {

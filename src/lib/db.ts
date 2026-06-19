@@ -10,7 +10,7 @@ const PROXY_SECRET = process.env.DB_PROXY_SECRET;
 
 type Json = Record<string, unknown>;
 
-async function call(op: string, args: Json): Promise<{ rows?: Json[]; ok?: boolean }> {
+async function call(op: string, args: Json): Promise<Record<string, unknown>> {
   if (!PROXY_URL || !PROXY_SECRET) {
     throw new Error("DB_PROXY_URL / DB_PROXY_SECRET are not configured");
   }
@@ -83,6 +83,24 @@ export const db = {
   /** Inserts or updates the data blob for a user. */
   async setData(userId: string, data: string): Promise<void> {
     await call("setData", { userId, data });
+  },
+
+  // --- Login rate limiting (state kept in the always-on proxy process) ---
+
+  /** Returns whether logins for `key` are currently allowed. */
+  async loginCheck(key: string): Promise<{ allowed: boolean; retryAfterSec: number }> {
+    const r = await call("loginCheck", { key });
+    return { allowed: Boolean(r.allowed), retryAfterSec: Number(r.retryAfterSec) || 0 };
+  },
+
+  /** Records a failed login attempt for `key`. */
+  async loginFail(key: string): Promise<void> {
+    await call("loginFail", { key });
+  },
+
+  /** Clears the failed-attempt counter for `key` (call on success). */
+  async loginReset(key: string): Promise<void> {
+    await call("loginReset", { key });
   },
 };
 

@@ -158,6 +158,9 @@ function AuthContent() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {mode === "register" && (
+                <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">Mínimo 8 caracteres</p>
+              )}
             </div>
 
             {error && (
