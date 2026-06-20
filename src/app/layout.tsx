@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ThemeProvider from "@/components/ThemeProvider";
+import PWARegister from "@/components/PWARegister";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,8 +17,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MisGastos - Control de Finanzas Personales",
   description: "Aplicación web para gestionar gastos personales, ingresos, deudas y ahorros",
+  applicationName: "MisGastos",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "MisGastos",
+  },
   icons: {
     icon: "/favicon.jpg",
+    apple: "/apple-icon-180.png",
   },
 };
 
@@ -26,6 +34,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: "#fb923c",
 };
 
 export default function RootLayout({
@@ -40,6 +49,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>{children}</ThemeProvider>
+        <PWARegister />
       </body>
     </html>
   );

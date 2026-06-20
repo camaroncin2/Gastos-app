@@ -15,6 +15,14 @@ export async function proxy(request: NextRequest) {
   // Always allow auth API routes
   if (isApiAuth) return NextResponse.next();
 
+  // Always allow public static assets (PWA manifest, service worker, icons, fonts…)
+  if (
+    pathname === "/sw.js" ||
+    /\.(?:png|jpg|jpeg|gif|svg|webp|ico|woff2?|ttf|eot|webmanifest|txt|xml)$/.test(pathname)
+  ) {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get("auth-token")?.value;
   const secret = getSecret();
 
