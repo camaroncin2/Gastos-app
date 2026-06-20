@@ -79,12 +79,41 @@ export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   otros: "Otros",
 };
 
+// ── Categories (built-in + user-defined) ──────────────────────────
+export interface CategoryMeta {
+  id: string;
+  label: string;
+  color: string;
+}
+
+export const BUILTIN_CATEGORIES: CategoryMeta[] = [
+  { id: "casa", label: "Gastos de Casa", color: "#fb923c" },
+  { id: "deudas_fijas", label: "Deudas Fijas", color: "#f97316" },
+  { id: "tarjeta", label: "Gastos de Tarjeta", color: "#fdba74" },
+  { id: "gasolina", label: "Gasolina", color: "#9ca3af" },
+  { id: "personal", label: "Gastos Personales", color: "#d1d5db" },
+  { id: "otros", label: "Otros", color: "#e5e7eb" },
+];
+
+/** Built-in categories plus the user's custom ones. */
+export function allCategories(custom: CategoryMeta[] = []): CategoryMeta[] {
+  return [...BUILTIN_CATEGORIES, ...custom];
+}
+/** Display label for a category id (falls back to the id itself). */
+export function categoryLabel(id: string, custom: CategoryMeta[] = []): string {
+  return allCategories(custom).find((c) => c.id === id)?.label ?? id;
+}
+/** Chart/accent color for a category id (falls back to a neutral gray). */
+export function categoryColor(id: string, custom: CategoryMeta[] = []): string {
+  return allCategories(custom).find((c) => c.id === id)?.color ?? "#cbd5e1";
+}
+
 export interface Expense {
   id: string;
   description: string;
   amount: number;
   currency: Currency;
-  category: ExpenseCategory;
+  category: string; // built-in id ("casa"…) or a custom category id
   date: string;
   recurring: boolean;
   paymentDate?: string;

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
-import { EXPENSE_CATEGORY_LABELS, type ExpenseCategory } from "@/types";
+import { categoryColor, categoryLabel } from "@/types";
 import StatCard from "@/components/ui/StatCard";
 import {
   Wallet,
@@ -32,15 +32,6 @@ import {
   Area,
 } from "recharts";
 
-const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
-  casa: "#fb923c",
-  deudas_fijas: "#f97316",
-  tarjeta: "#fdba74",
-  gasolina: "#9ca3af",
-  personal: "#d1d5db",
-  otros: "#e5e7eb",
-};
-
 export default function DashboardView() {
   const {
     getTotalIncomes,
@@ -58,6 +49,7 @@ export default function DashboardView() {
     convertToCRC,
     formatAmount,
     darkMode,
+    customCategories,
   } = useStore(useShallow((s) => ({
     getTotalIncomes: s.getTotalIncomes,
     getTotalExpenses: s.getTotalExpenses,
@@ -74,6 +66,7 @@ export default function DashboardView() {
     convertToCRC: s.convertToCRC,
     formatAmount: s.formatAmount,
     darkMode: s.darkMode,
+    customCategories: s.customCategories,
   })));
 
   const totalIncomes = getTotalIncomes();
@@ -91,10 +84,10 @@ export default function DashboardView() {
   const pieData = useMemo(() => Object.entries(categoryData)
     .filter(([, value]) => value > 0)
     .map(([key, value]) => ({
-      name: EXPENSE_CATEGORY_LABELS[key as ExpenseCategory],
+      name: categoryLabel(key, customCategories),
       value,
-      color: CATEGORY_COLORS[key as ExpenseCategory],
-    })), [categoryData]);
+      color: categoryColor(key, customCategories),
+    })), [categoryData, customCategories]);
 
   const barData = useMemo(() => [
     { name: "Ingresos", value: totalIncomes, fill: "#fb923c" },

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
 import { formatCurrency, getTodayStr } from "@/lib/utils";
-import { Currency, ExpenseCategory, EXPENSE_CATEGORY_LABELS } from "@/types";
+import { Currency, ExpenseCategory, allCategories, categoryLabel } from "@/types";
 import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
 import StatCard from "@/components/ui/StatCard";
@@ -17,11 +17,14 @@ import {
 const CATEGORY_ICONS: Record<ExpenseCategory, typeof Home> = {
   casa: Home, deudas_fijas: FileText, tarjeta: CreditCard, gasolina: Fuel, personal: User, otros: Tag,
 };
+// Built-in categories have a specific icon; custom ones use a generic tag.
+const getCategoryIcon = (id: string) => CATEGORY_ICONS[id as ExpenseCategory] ?? Tag;
 
 export default function ExpensesView() {
-  const { expenses, currentMonth, addExpense, updateExpense, deleteExpense, convertToCRC, getTotalExpenses, getExpensesByCategory, formatAmount } = useStore(useShallow((s) => ({
+  const { expenses, currentMonth, customCategories, addExpense, updateExpense, deleteExpense, convertToCRC, getTotalExpenses, getExpensesByCategory, formatAmount } = useStore(useShallow((s) => ({
     expenses: s.expenses,
     currentMonth: s.currentMonth,
+    customCategories: s.customCategories,
     addExpense: s.addExpense,
     updateExpense: s.updateExpense,
     deleteExpense: s.deleteExpense,
@@ -32,9 +35,9 @@ export default function ExpensesView() {
   })));
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [filterCategory, setFilterCategory] = useState<ExpenseCategory | "all">("all");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
   const [form, setForm] = useState({
-    description: "", amount: "", currency: "CRC" as Currency, category: "personal" as ExpenseCategory, date: getTodayStr(), recurring: false,
+    description: "", amount: "", currency: "CRC" as Currency, category: "personal", date: getTodayStr(), recurring: false,
   });
 
   const fmtNum = (v: string) => { if (!v) return ""; const clean = v.replace(/[^0-9.,]/g, ""); const parts = clean.replace(",", ".").split("."); const int = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); return parts.length > 1 ? `${int},${parts[1]}` : int; };
@@ -81,10 +84,10 @@ export default function ExpensesView() {
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${filterCategory === "all" ? "bg-orange-400 text-white" : "bg-gray-100 dark:bg-dark-border text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-surface"}`}>
             Todos
           </motion.button>
-          {(Object.keys(EXPENSE_CATEGORY_LABELS) as ExpenseCategory[]).map((cat) => (
-            <motion.button key={cat} whileTap={{ scale: 0.95 }} onClick={() => setFilterCategory(cat)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${filterCategory === cat ? "bg-orange-400 text-white" : "bg-gray-100 dark:bg-dark-border text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-surface"}`}>
-              {EXPENSE_CATEGORY_LABELS[cat]}
+          {allCategories(customCategories).map((cat) => (
+            <motion.button key={cat.id} whileTap={{ scale: 0.95 }} onClick={() => setFilterCategory(cat.id)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${filterCategory === cat.id ? "bg-orange-400 text-white" : "bg-gray-100 dark:bg-dark-border text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-surface"}`}>
+              {cat.label}
             </motion.button>
           ))}
         </div>
@@ -102,7 +105,7 @@ export default function ExpensesView() {
         <div className="space-y-3">
           <AnimatePresence>
             {filtered.map((expense, idx) => {
-              const Icon = CATEGORY_ICONS[expense.category];
+              const Icon = getCategoryIcon(expense.category);
               return (
                 <motion.div key={expense.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ delay: idx * 0.04 }} whileHover={{ y: -1 }}
                   className="bg-white dark:bg-dark-card rounded-xl border border-gray-100 dark:border-dark-border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group transition-colors">
@@ -113,7 +116,7 @@ export default function ExpensesView() {
                     <div>
                       <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{expense.description}</p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-dark-border text-gray-500 dark:text-gray-400">{EXPENSE_CATEGORY_LABELS[expense.category]}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-dark-border text-gray-500 dark:text-gray-400">{categoryLabel(expense.category, customCategories)}</span>
                         <span className="text-xs text-gray-400 flex items-center gap-1"><Calendar className="w-3 h-3" />{expense.date}</span>
                         {expense.recurring && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-400">Recurrente</span>}
                       </div>
@@ -166,10 +169,10 @@ export default function ExpensesView() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Categoría</label>
-              <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as ExpenseCategory })}
+              <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent">
-                {(Object.keys(EXPENSE_CATEGORY_LABELS) as ExpenseCategory[]).map((cat) => (
-                  <option key={cat} value={cat}>{EXPENSE_CATEGORY_LABELS[cat]}</option>
+                {allCategories(customCategories).map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.label}</option>
                 ))}
               </select>
             </div>

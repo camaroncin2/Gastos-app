@@ -9,10 +9,11 @@ import type {
   Loan,
   LoanPayment,
   Currency,
-  ExpenseCategory,
+  CategoryMeta,
   Subscription,
   DisplayCurrencyCode,
 } from "@/types";
+import { allCategories } from "@/types";
 
 interface ExchangeRates {
   USD_TO_CRC: number;
@@ -32,6 +33,7 @@ interface AppState {
   vault: VaultEntry[];
   loans: Loan[];
   subscriptions: Subscription[];
+  customCategories: CategoryMeta[];
   vaultUnlocked: boolean;
   exchangeRates: ExchangeRates;
   lastRatesUpdate: string | null;
@@ -90,6 +92,10 @@ interface AppState {
   updateSubscription: (id: string, subscription: Partial<Subscription>) => void;
   deleteSubscription: (id: string) => void;
 
+  // Categories
+  addCategory: (label: string, color: string) => void;
+  deleteCategory: (id: string) => void;
+
   // Vault
   addVaultEntry: (entry: Omit<VaultEntry, "id">) => void;
   updateVaultEntry: (id: string, entry: Partial<VaultEntry>) => void;
@@ -103,7 +109,7 @@ interface AppState {
   getTotalDebtPayments: () => number;
   getTotalSavingsContributions: () => number;
   getRemainingBalance: () => number;
-  getExpensesByCategory: () => Record<ExpenseCategory, number>;
+  getExpensesByCategory: () => Record<string, number>;
 }
 
 const getCurrentMonth = (): string => {
@@ -125,6 +131,7 @@ export const useStore = create<AppState>()(
     vault: [],
     loans: [],
     subscriptions: [],
+    customCategories: [],
     vaultUnlocked: false,
     exchangeRates: {
       USD_TO_CRC: 510,
@@ -201,6 +208,7 @@ export const useStore = create<AppState>()(
           vault: state.vault,
           loans: state.loans,
           subscriptions: state.subscriptions,
+          customCategories: state.customCategories,
           exchangeRates: state.exchangeRates,
           userName: state.userName,
           vaultCheck: state.vaultCheck,
@@ -225,6 +233,7 @@ export const useStore = create<AppState>()(
           if (Array.isArray(data.vault)) update.vault = data.vault;
           if (Array.isArray(data.loans)) update.loans = data.loans;
           if (Array.isArray(data.subscriptions)) update.subscriptions = data.subscriptions;
+          if (Array.isArray(data.customCategories)) update.customCategories = data.customCategories;
           if (data.exchangeRates) update.exchangeRates = data.exchangeRates;
           if (data.userName) update.userName = data.userName;
           if (typeof data.vaultCheck === "string") update.vaultCheck = data.vaultCheck;
@@ -368,6 +377,23 @@ export const useStore = create<AppState>()(
           subscriptions: state.subscriptions.filter((s) => s.id !== id),
         })),
 
+      // Category actions
+      addCategory: (label, color) =>
+        set((state) => ({
+          customCategories: [
+            ...state.customCategories,
+            { id: uuidv4(), label: label.trim(), color },
+          ],
+        })),
+      deleteCategory: (id) =>
+        set((state) => ({
+          customCategories: state.customCategories.filter((c) => c.id !== id),
+          // Expenses using the removed category fall back to "Otros".
+          expenses: state.expenses.map((e) =>
+            e.category === id ? { ...e, category: "otros" } : e
+          ),
+        })),
+
       // Vault actions
       addVaultEntry: (entry) =>
         set((state) => ({
@@ -455,16 +481,11 @@ export const useStore = create<AppState>()(
         const monthExpenses = state.expenses.filter((e) =>
           e.date.startsWith(state.currentMonth)
         );
-        const categories: Record<ExpenseCategory, number> = {
-          casa: 0,
-          deudas_fijas: 0,
-          tarjeta: 0,
-          gasolina: 0,
-          personal: 0,
-          otros: 0,
-        };
+        const categories: Record<string, number> = {};
+        for (const c of allCategories(state.customCategories)) categories[c.id] = 0;
         monthExpenses.forEach((e) => {
-          categories[e.category] += state.convertToCRC(e.amount, e.currency);
+          categories[e.category] =
+            (categories[e.category] ?? 0) + state.convertToCRC(e.amount, e.currency);
         });
         return categories;
       },
@@ -487,7 +508,7 @@ type Persistable = Omit<AppState, "_ready" | keyof ReturnType<typeof Object.getO
 
 const PERSIST_KEYS: (keyof AppState)[] = [
   "currentMonth", "darkMode", "userName", "vaultCheck",
-  "incomes", "expenses", "debts", "savings", "vault", "loans", "subscriptions",
+  "incomes", "expenses", "debts", "savings", "vault", "loans", "subscriptions", "customCategories",
   "exchangeRates", "lastRatesUpdate", "dismissedNotifications",
   "displayCurrency", "displayRate", "displaySymbol", "displayDecimals",
 ];

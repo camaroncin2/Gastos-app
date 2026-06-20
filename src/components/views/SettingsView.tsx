@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useStore } from "@/store/useStore";
 import { useShallow } from "zustand/react/shallow";
 import { motion } from "framer-motion";
-import { Settings, RefreshCw, Save, User, KeyRound, Download, Upload, RotateCw, CheckCircle, AlertTriangle, Wifi, Loader2, Globe2 } from "lucide-react";
+import { Settings, RefreshCw, Save, User, KeyRound, Tag, Plus, Trash2, Download, Upload, RotateCw, CheckCircle, AlertTriangle, Wifi, Loader2, Globe2 } from "lucide-react";
 import { DISPLAY_CURRENCIES } from "@/types";
 
 async function fetchLiveRates(): Promise<{ USD_TO_CRC: number; EUR_TO_CRC: number } | null> {
@@ -27,7 +27,7 @@ async function fetchLiveRates(): Promise<{ USD_TO_CRC: number; EUR_TO_CRC: numbe
 }
 
 export default function SettingsView() {
-  const { exchangeRates, setExchangeRates, lastRatesUpdate, userName, setUserName, exportData, importData, generateRecurring, displayCurrency, setDisplayCurrency } = useStore(useShallow((s) => ({
+  const { exchangeRates, setExchangeRates, lastRatesUpdate, userName, setUserName, exportData, importData, generateRecurring, displayCurrency, setDisplayCurrency, customCategories, addCategory, deleteCategory } = useStore(useShallow((s) => ({
     exchangeRates: s.exchangeRates,
     setExchangeRates: s.setExchangeRates,
     lastRatesUpdate: s.lastRatesUpdate,
@@ -38,7 +38,16 @@ export default function SettingsView() {
     generateRecurring: s.generateRecurring,
     displayCurrency: s.displayCurrency,
     setDisplayCurrency: s.setDisplayCurrency,
+    customCategories: s.customCategories,
+    addCategory: s.addCategory,
+    deleteCategory: s.deleteCategory,
   })));
+  const [catForm, setCatForm] = useState({ label: "", color: "#fb923c" });
+  const handleAddCategory = () => {
+    if (!catForm.label.trim()) return;
+    addCategory(catForm.label, catForm.color);
+    setCatForm({ label: "", color: "#fb923c" });
+  };
   const [rates, setRates] = useState({ USD_TO_CRC: exchangeRates.USD_TO_CRC.toString(), EUR_TO_CRC: exchangeRates.EUR_TO_CRC.toString() });
   const [name, setName] = useState(userName);
   const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
@@ -327,6 +336,45 @@ export default function SettingsView() {
             {fetchingDisplay ? "Aplicando..." : "Aplicar moneda"}
           </motion.button>
         </div>
+      </motion.div>
+
+      {/* Custom Categories */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.13 }} className={cardClass}>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-400"><Tag className="w-5 h-5" /></div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Categorías de Gastos</h3>
+            <p className="text-xs text-gray-400">Creá tus propias categorías además de las predeterminadas</p>
+          </div>
+        </div>
+        {customCategories.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {customCategories.map((c) => (
+              <div key={c.id} className="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 dark:bg-dark-surface">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                  <span className="text-sm text-gray-700 dark:text-gray-200">{c.label}</span>
+                </div>
+                <motion.button whileTap={{ scale: 0.9 }} onClick={() => deleteCategory(c.id)}
+                  className="p-1.5 rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all">
+                  <Trash2 className="w-4 h-4" />
+                </motion.button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <input type="color" value={catForm.color} onChange={(e) => setCatForm({ ...catForm, color: e.target.value })}
+            className="w-11 h-11 shrink-0 rounded-lg border border-gray-200 dark:border-dark-border cursor-pointer bg-transparent p-0.5" title="Color" />
+          <input type="text" value={catForm.label} onChange={(e) => setCatForm({ ...catForm, label: e.target.value })}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddCategory(); } }}
+            placeholder="Nombre de la categoría" className={inputClass} />
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleAddCategory}
+            className="flex items-center gap-1 px-4 py-2.5 bg-orange-400 hover:bg-orange-500 text-white text-sm font-medium rounded-xl transition-colors whitespace-nowrap">
+            <Plus className="w-4 h-4" />Agregar
+          </motion.button>
+        </div>
+        <p className="text-xs text-gray-400 mt-3">Las predeterminadas (Casa, Tarjeta, etc.) no se pueden borrar. Si borrás una propia, sus gastos pasan a &quot;Otros&quot;.</p>
       </motion.div>
 
       {/* Recurring */}
