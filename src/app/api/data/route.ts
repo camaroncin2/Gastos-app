@@ -13,7 +13,9 @@ export async function GET() {
       headers: { "Content-Type": "application/json" },
     });
   } catch {
-    return NextResponse.json(null);
+    // Could not reach the database — signal an error (NOT empty data) so the
+    // client stays read-only instead of overwriting stored data with defaults.
+    return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }
 }
 

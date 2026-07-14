@@ -39,10 +39,19 @@ export default function AppShell() {
   const [calOpen, setCalOpen] = useState(false);
   const ViewComponent = views[activeView] || DashboardView;
   const isReady = useStore((s) => s._ready);
+  const [slowConnect, setSlowConnect] = useState(false);
 
   useEffect(() => {
     if (isReady) setHydrated(true);
   }, [isReady]);
+
+  // If loading takes a while (e.g. the server is down), show a clear message
+  // instead of a bare spinner — the app never shows empty data in this state.
+  useEffect(() => {
+    if (hydrated) return;
+    const t = setTimeout(() => setSlowConnect(true), 8000);
+    return () => clearTimeout(t);
+  }, [hydrated]);
 
   // Track screen size
   useEffect(() => {
@@ -71,8 +80,22 @@ export default function AppShell() {
 
   if (!hydrated) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50/50 dark:bg-dark-bg">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50/50 dark:bg-dark-bg gap-4 px-6 text-center">
         <div className="w-8 h-8 border-3 border-orange-400 border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-gray-500 dark:text-gray-400">Conectando con tus datos…</p>
+        {slowConnect && (
+          <div className="max-w-xs space-y-3">
+            <p className="text-xs text-gray-400">
+              Está tardando más de lo normal. Verificá que tu servidor esté encendido y con internet. Reintentando automáticamente…
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-orange-400 hover:bg-orange-500 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
       </div>
     );
   }

@@ -542,51 +542,63 @@ function saveToServer() {
   }, 300);
 }
 
-function loadFromServer() {
-  return fetch("/api/data")
-    .then((r) => r.text())
-    .then((text) => {
-      if (!text || text === "null" || text.trim() === "") return;
-      if (text === _lastSavedJSON) return; // identical to what we last saved
-      _lastSavedJSON = text;
-      try {
-        const data = JSON.parse(text);
-        if (!data || typeof data !== "object") return;
-        _pulling = true;
-        const update: Partial<AppState> = {};
-        for (const k of PERSIST_KEYS) {
-          if (k in data) {
-            (update as Record<string, unknown>)[k] = data[k];
-          }
-        }
-        useStore.setState(update);
-        setTimeout(() => { _pulling = false; }, 300);
-      } catch { /* ignore bad JSON */ }
+// Returns true only if we actually reached the server, so a failed load can
+// never be mistaken for "the account is empty".
+function loadFromServer(): Promise<boolean> {
+  return fetch("/api/data", { cache: "no-store" })
+    .then((r) => {
+      if (!r.ok) throw new Error("load failed: " + r.status);
+      return r.text();
     })
-    .catch(() => {});
+    .then((text) => {
+      // Reached the server. Apply data only if there is new data.
+      if (text && text !== "null" && text.trim() !== "" && text !== _lastSavedJSON) {
+        _lastSavedJSON = text;
+        try {
+          const data = JSON.parse(text);
+          if (data && typeof data === "object") {
+            _pulling = true;
+            const update: Partial<AppState> = {};
+            for (const k of PERSIST_KEYS) {
+              if (k in data) {
+                (update as Record<string, unknown>)[k] = data[k];
+              }
+            }
+            useStore.setState(update);
+            setTimeout(() => { _pulling = false; }, 300);
+          }
+        } catch { /* ignore bad JSON */ }
+      }
+      return true;
+    })
+    .catch(() => false); // could not reach the server
 }
 
 if (typeof window !== "undefined") {
-  // Initial load from server
-  loadFromServer().finally(() => {
-    useStore.setState({ _ready: true });
-  });
+  // Saving is enabled ONLY after a successful load. If the app can't read your
+  // data on open (e.g. the server is down), it stays read-only and never
+  // overwrites the stored data with an empty default.
+  const markReady = () => {
+    if (!useStore.getState()._ready) useStore.setState({ _ready: true });
+  };
 
-  // Poll every 5 seconds
+  loadFromServer().then((ok) => { if (ok) markReady(); });
+
+  // Poll every 5 seconds — also keeps retrying the initial load until it works.
   _pollInterval = setInterval(() => {
     if (document.visibilityState === "visible") {
-      loadFromServer();
+      loadFromServer().then((ok) => { if (ok) markReady(); });
     }
   }, 5000);
 
-  // Immediate load when returning to tab
+  // Immediate load when returning to the tab.
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
-      loadFromServer();
+      loadFromServer().then((ok) => { if (ok) markReady(); });
     }
   });
 
-  // Save on every change
+  // Save on every change — only once we've successfully loaded.
   useStore.subscribe(() => {
     if (useStore.getState()._ready) {
       saveToServer();
